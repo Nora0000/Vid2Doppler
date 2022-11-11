@@ -18,6 +18,7 @@ def main(args):
 
     # get video infomation
     video_file = os.path.basename(args.input_video).replace('.mp4', '')
+    video_file = video_file.replace('.avi', '')
     out_path = args.output_folder + '/' + video_file + '/'
     video = cv2.VideoCapture("./" + args.input_video)
     fps = video.get(cv2.CAP_PROP_FPS)
@@ -28,6 +29,7 @@ def main(args):
             if "frame_" in name])
     output_path = os.path.join(args.output_folder, os.path.basename(\
                                 video_file).replace('.mp4', ''))
+    output_path = output_path.replace('.avi', '')
     if os.path.isfile(output_path + \
                 "/../../frames_new.npy"):
         frames = np.load(output_path + \

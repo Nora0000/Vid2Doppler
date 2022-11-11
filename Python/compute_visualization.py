@@ -46,6 +46,7 @@ def main(args):
             if "frame_" in name])
     output_path = os.path.join(args.output_folder, os.path.basename(\
                                 video_file).replace('.mp4', ''))
+    output_path = output_path.replace('.avi', '')
     if os.path.isfile(output_path + \
                 "/../../frames_new.npy"):
         frames = np.load(output_path + \

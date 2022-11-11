@@ -14,9 +14,9 @@ def main(args):
     # define output path
     output_path = os.path.join(args.output_folder, \
                 os.path.basename(video_file).replace('.mp4', ''))
+    output_path = output_path.replace('.avi', '')
     csv_folder_path = os.path.join(output_path, "frame_position/")
 
-    output_path = os.path.join(args.output_folder, os.path.basename(video_file).replace('.mp4', ''))
     os.makedirs(output_path, exist_ok=True)
     os.makedirs(csv_folder_path, exist_ok=True)
 

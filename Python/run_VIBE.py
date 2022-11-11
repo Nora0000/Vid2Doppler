@@ -66,6 +66,7 @@ def main(args):
     # get the frame rate (frames per second) of the input video
     video = cv2.VideoCapture(video_file)
     fps = video.get(cv2.CAP_PROP_FPS)
+    print("video fps: {}".format(fps))
 
     # ========= Run tracking ========= #
     bbox_scale = 1.1

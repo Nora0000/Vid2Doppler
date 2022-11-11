@@ -21,6 +21,7 @@ def main(args):
     # set output flles
     output_path = os.path.join(args.output_folder, os.path.basename(\
                                 video_file).replace('.mp4', ''))
+    output_path = output_path.replace('.avi', '')
     csv_folder_path = os.path.join(output_path, "frame_velocity/")
     os.makedirs(csv_folder_path, exist_ok=True)
 

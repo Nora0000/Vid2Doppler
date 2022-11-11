@@ -28,7 +28,8 @@ def main(args):
 
 	cap = cv2.VideoCapture(vid_f)
 
-	out_vid = cv2.VideoWriter(in_folder+'/'+vid_file_name+'_output_signal.mp4',cv2.VideoWriter_fourcc(*'MP4V'), fps, (2425,300))
+	out_vid = cv2.VideoWriter(in_folder+'/'+vid_file_name+'_output_signal.avi',cv2.VideoWriter_fourcc(*'XVID'), fps, (2558,300))
+	# out_vid = cv2.VideoWriter(in_folder+'/'+vid_file_name+'_output_signal.mp4',cv2.VideoWriter_fourcc(*'mp4v'), fps, (2425,300))
 
 	synth_doppler_dat_f = in_folder + "/output/" + vid_file_name + "/synth_doppler.npy"
 	synth_doppler_dat = np.load(synth_doppler_dat_f)
@@ -52,13 +53,16 @@ def main(args):
 	norm = matplotlib.colors.Normalize(vmin=0, vmax=y_max)
 
 	for idx in range(0, len(dop_spec_test)):
+	# for idx in range(100):
 		ret, frame = cap.read()
 		original_synth = color_scale(synth_spec_test[idx],matplotlib.colors.Normalize(vmin=0, vmax=np.max(synth_spec_test)),"Initial Synthetic Doppler")
 		original_dop = color_scale(dop_spec_test[idx],matplotlib.colors.Normalize(vmin=0, vmax=np.max(dop_spec_test)),"Real World Doppler")
 		recon = color_scale(decoded[idx],matplotlib.colors.Normalize(vmin=0, vmax=np.max(decoded)),"Final Synthetic Doppler")
 		in_frame = color_scale(frame,None,"Input Video")
 		output = np.hstack([in_frame,original_dop, original_synth, recon])
+		# print(output.shape)
 		out_vid.write(output)
+		#cv2.imshow("Recording video stream", output)
 
 	cap.release()
 	out_vid.release()

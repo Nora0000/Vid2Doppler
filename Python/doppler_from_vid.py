@@ -20,9 +20,10 @@ def main(args):
 		os.system("python compute_visualization.py --input_video %s --output_folder %s --wireframe" % (args.input_video, out_path))
 	os.system("python compute_synth_doppler.py --input_video %s --output_folder %s" % (args.input_video, out_path))
 	if args.doppler_gt:
-		os.system("python  plot_synth_dop.py --input_video %s --model_path %s --doppler_gt" % (args.input_video, args.model_path))
+		os.system("python plot_synth_dop.py --input_video %s --model_path %s --doppler_gt" % (args.input_video, args.model_path))
 	else:
-		os.system("python  plot_synth_dop.py --input_video %s --model_path %s" % (args.input_video, args.model_path))
+		os.system("python compute_doppler_gt.py --input_video %s" % args.input_video)
+		os.system("python plot_synth_dop.py --input_video %s --model_path %s" % (args.input_video, args.model_path))
 
 	# free all temporary memory
 	image_folder = str(np.load(folder_path + "/image_folder.npy"))

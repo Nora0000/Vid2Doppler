@@ -20,6 +20,7 @@ def main(args):
     # define output path
     output_path = os.path.join(args.output_folder, \
                 os.path.basename(video_file).replace('.mp4', ''))
+    output_path = output_path.replace('.avi', '')
 
     # get frames
     frames = np.load(output_path + \
