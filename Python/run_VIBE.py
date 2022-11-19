@@ -1,8 +1,9 @@
 #
 # Created by Yue Jiang in June 2020
 #
+import faulthandler
+faulthandler.enable()
 
- 
 import os
 os.environ['PYOPENGL_PLATFORM'] = 'egl'
 import cv2

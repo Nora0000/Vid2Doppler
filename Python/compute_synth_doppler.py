@@ -55,7 +55,15 @@ def main(args):
         for i in range(len(synth_doppler_dat)):
             synth_doppler_dat[i] = gaussian_filter1d(synth_doppler_dat[i], GAUSSIAN_KERNEL)
 
-    np.save(out_path+"/synth_doppler.npy",synth_doppler_dat)
+    np.save(out_path+"/synth_doppler.npy", synth_doppler_dat)
+
+    model_path = args.model_path
+    scale_vals = np.load(model_path + "scale_vals_new.npy")
+    scale_vals[1] = max(scale_vals[1], np.max(synth_doppler_dat))
+    scale_vals[3] = min(scale_vals[3], np.min(synth_doppler_dat))
+    np.save(os.path.join(model_path, "scale_vals_new.npy"), scale_vals)
+
+    return np.max(synth_doppler_dat), np.min(synth_doppler_dat)
 
 
 if __name__ == '__main__':
@@ -65,6 +73,8 @@ if __name__ == '__main__':
     parser.add_argument('--input_video', type=str, help='input video file')
 
     parser.add_argument('--output_folder', type=str, help='output folder to write results')
+
+    parser.add_argument('--model_path', type=str, help='Path to DL models')
 
     args = parser.parse_args()
 
