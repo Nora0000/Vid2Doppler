@@ -2,7 +2,6 @@
 *.avi
 *.mp4
 sample_video/
-models/
 mesh/
 data/
 Python/data/
