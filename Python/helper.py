@@ -3,6 +3,48 @@ import cv2
 import sys
 import imutils
 from matplotlib import cm
+from tensorflow.python.keras import backend as K
+import tensorflow as tf
+
+
+def downsample_bins(original=120, target=32):
+	# down sample from 120 bins to 32 bins, symmetrically
+	indices = np.linspace(0, int(original/2-1), int(target/2)).astype(int)
+	indices = sorted(np.concatenate((indices, original-3 - indices)))
+	return indices
+
+
+def chose_central_rangebins(d_fft, range_bin_num=188, DISCARD_BINS=[14, 15, 16], threshold=0.1, ARM_LEN=30):
+	fft_discard = np.copy(d_fft)
+	# discard velocities around 0
+	for j in DISCARD_BINS:
+		fft_discard[j, :] = np.zeros(range_bin_num)
+	# select range bins with the highest energy
+	mmax = np.max(fft_discard)
+	row, column = np.where(fft_discard == mmax)
+	row, column = row[0], column[0]
+	if 25 <= column <= 30:
+		fft_discard_column = np.copy(fft_discard)
+		fft_discard_column[:, 25:31] = np.zeros((32, 6))
+		mmax = np.max(fft_discard_column)
+		row, column = np.where(fft_discard_column == mmax)
+		row, column = row[0], column[0]
+		return column - 2, column + 3
+	return column-2, column+3
+	left = column
+	right = column + 1
+	if column > 0:
+		for left in range(column - 1, 0, -1):
+			if np.max(fft_discard[:, left]) < threshold * mmax:
+				break
+	if column < range_bin_num-1:
+		for right in range(column + 1, range_bin_num, 1):
+			if np.max(fft_discard[:, right]) < threshold * mmax:
+				break
+	left = max(left, column - ARM_LEN)
+	right = min(right, column + ARM_LEN)
+	return left, right
+
 
 def rolling_window_combine(X_in):
 	for i in range(1,len(X_in)):
@@ -25,7 +67,8 @@ def rolling_average(X_in):
 	return X_in
 
 def root_mean_squared_error(y_true, y_pred):
-	return K.sqrt(K.mean(K.square((y_pred*255) - (y_true*255))))
+	indices = [0, 1, 2,3,4,5,6,7,8,9,10,11,12,13,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31]
+	return K.sqrt(K.mean(K.square((tf.gather(y_pred, indices, axis=1)*255) - (tf.gather(y_true, indices, axis=1)*255))))
 
 def get_spectograms(dop_dat, t_chunk, frames_per_sec, t_chunk_overlap=None, synthetic=False,zero_pad=False):
 	frame_overlap = 1

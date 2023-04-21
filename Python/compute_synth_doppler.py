@@ -6,7 +6,6 @@ from scipy.ndimage import gaussian_filter1d
 import argparse
 import cv2
 
-
 N_BINS = 32
 DISCARD_BINS = [14,15,16]
 GAUSSIAN_BLUR = True
@@ -44,16 +43,18 @@ def main(args):
     for frame_idx in frames:
         gen_doppler = np.genfromtxt(out_path + "/frame_velocity/frame_%06d.csv" % frame_idx, delimiter=',')
         velocity = gen_doppler[gen_doppler[:, 1]==1, 0]
-        hist = np.histogram(velocity, bins=np.linspace(-2, 2, num=N_BINS+1))[0]
-        for bin_idx in DISCARD_BINS:
+        # hist = np.histogram(velocity, bins=np.linspace(-2, 2, num=N_BINS+1))[0]     # change velocity range to be consistent with UWB
+        # hist = np.histogram(velocity, bins=np.linspace(-1.38, 1.38, num=N_BINS + 1))[0]   # FPS=80
+        hist = np.histogram(velocity, bins=np.linspace(-1, 1, num=N_BINS + 1))[0]   #fps=60
+        for bin_idx in DISCARD_BINS:      # don't ignore stationary parts.
             hist[bin_idx] = 0
         synth_doppler_dat.append(hist/gen_doppler.shape[0])
 
     synth_doppler_dat = np.array(synth_doppler_dat)
 
-    if GAUSSIAN_BLUR:
-        for i in range(len(synth_doppler_dat)):
-            synth_doppler_dat[i] = gaussian_filter1d(synth_doppler_dat[i], GAUSSIAN_KERNEL)
+    # if GAUSSIAN_BLUR:           # Don't need Gaussian blur? ignore discard bins in training
+    #     for i in range(len(synth_doppler_dat)):
+    #         synth_doppler_dat[i] = gaussian_filter1d(synth_doppler_dat[i], GAUSSIAN_KERNEL)
 
     np.save(out_path+"/synth_doppler.npy", synth_doppler_dat)
 
@@ -61,9 +62,13 @@ def main(args):
     scale_vals = np.load(model_path + "scale_vals_new.npy")
     scale_vals[1] = max(scale_vals[1], np.max(synth_doppler_dat))
     scale_vals[3] = min(scale_vals[3], np.min(synth_doppler_dat))
-    np.save(os.path.join(model_path, "scale_vals_new.npy"), scale_vals)
 
-    return np.max(synth_doppler_dat), np.min(synth_doppler_dat)
+    number = len(synth_doppler_dat)
+    scale_vals[8:11] = (scale_vals[8:11] * scale_vals[11] + np.mean(synth_doppler_dat[:, DISCARD_BINS], axis=0) * number) / (
+            scale_vals[11] + number)
+    scale_vals[11] += number
+    np.save(os.path.join(model_path, "scale_vals_new.npy"), scale_vals)
+    return np.max(synth_doppler_dat), np.min(synth_doppler_dat), scale_vals[8:11]
 
 
 if __name__ == '__main__':
