@@ -30,10 +30,14 @@ def main(args):
     # define video writer
     fourcc = cv2.VideoWriter_fourcc('D', 'I', 'V', 'X')
     if args.wireframe:
+        # out = cv2.VideoWriter(args.output_folder + video_file + "/" + video_file \
+        #                     + "_result_wireframe.mp4", fourcc, fps, \
+        #                     (int(video.get(cv2.CAP_PROP_FRAME_WIDTH)), \
+        #                     int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))))
         out = cv2.VideoWriter(args.output_folder + video_file + "/" + video_file \
-                            + "_result_wireframe.mp4", fourcc, fps, \
-                            (int(video.get(cv2.CAP_PROP_FRAME_WIDTH)), \
-                            int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))))
+                              + "_test.mp4", fourcc, fps, \
+                              (int(video.get(cv2.CAP_PROP_FRAME_WIDTH)), \
+                               int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))))
     else:
         out = cv2.VideoWriter(args.output_folder + video_file + "/" + video_file \
                             + "_result_mesh.mp4", fourcc, fps, \
@@ -75,7 +79,12 @@ def main(args):
     num_vertices = vertex_position[0].shape[0]
 
     # get predicted camera positions from the model
-    orig_cameras = np.genfromtxt(args.output_folder + video_file \
+    if os.path.isfile(args.output_folder + video_file \
+                + "/../../orig_cam_new.csv"):
+        orig_cameras = np.genfromtxt(args.output_folder + video_file \
+                                     + "/../../orig_cam_new.csv", delimiter=',')
+    else:
+        orig_cameras = np.genfromtxt(args.output_folder + video_file \
                 + "/../../orig_cam.csv", delimiter=',')
 
     # change position and velocity lists to numpy arrays
@@ -86,7 +95,6 @@ def main(args):
     # loop over frames
     count = 0
     for frame_idx in frames:
-
         # capture frames in the video
         ret, frame = video.read()
         print("Visualizing Frame #" + str(count))
@@ -148,6 +156,7 @@ def main(args):
             frame = velocity_image * (velocity_image > 0) + frame * (velocity_image == 0)
         else:
             frame = velocity_image
+            # frame = visibility_image
 
         # output results with both velocity and visibility
         if args.concatenate_result:
@@ -179,7 +188,7 @@ if __name__ == '__main__':
     parser.add_argument('--background', action='store_true',
                         help='output result with original background.')
 
-    parser.add_argument('--camera_orig', type=str, default="[0,0,10]",
+    parser.add_argument('--camera_orig', type=str, default="[0,0,0.001]",
                         help='camera origin position')
 
     args = parser.parse_args()

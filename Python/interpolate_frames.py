@@ -100,8 +100,8 @@ if __name__ == '__main__':
     parser.add_argument('--wireframe', action='store_true',
                         help='render all meshes as wireframes.')
 
-    parser.add_argument('--camera_orig', type=str, default="[0,0,10]",
-                        help='camera origin position')
+    # parser.add_argument('--camera_orig', type=str, default="[0,0,10]",
+    #                     help='camera origin position')
 
     parser.add_argument('--save_hand_csv', action='store_true',
                         help='render all meshes as wireframes.')

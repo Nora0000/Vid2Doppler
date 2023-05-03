@@ -86,8 +86,8 @@ if __name__ == '__main__':
     parser.add_argument('--wireframe', action='store_true',
                         help='render all meshes as wireframes.')
 
-    parser.add_argument('--camera_orig', type=str, default="[0,0,10]",
-                        help='camera origin position')
+    parser.add_argument('--camera_orig', type=str, default="[0,0,0.001]",
+                        help='camera origin position')      # used as the direction of camera to decide occlusions
 
     args = parser.parse_args()
 

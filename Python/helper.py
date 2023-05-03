@@ -14,7 +14,7 @@ def downsample_bins(original=120, target=32):
 	return indices
 
 
-def chose_central_rangebins(d_fft, range_bin_num=188, DISCARD_BINS=[14, 15, 16], threshold=0.1, ARM_LEN=30):
+def chose_central_rangebins(d_fft, range_bin_num=188, torso_loc=[], DISCARD_BINS=[14, 15, 16, 17], threshold=0.1, ARM_LEN=30, doppler_bin=32):
 	fft_discard = np.copy(d_fft)
 	# discard velocities around 0
 	for j in DISCARD_BINS:
@@ -23,14 +23,20 @@ def chose_central_rangebins(d_fft, range_bin_num=188, DISCARD_BINS=[14, 15, 16],
 	mmax = np.max(fft_discard)
 	row, column = np.where(fft_discard == mmax)
 	row, column = row[0], column[0]
-	if 25 <= column <= 30:
-		fft_discard_column = np.copy(fft_discard)
-		fft_discard_column[:, 25:31] = np.zeros((32, 6))
-		mmax = np.max(fft_discard_column)
-		row, column = np.where(fft_discard_column == mmax)
-		row, column = row[0], column[0]
+	# if column in torso_loc:
+	# 	fft_discard_column = np.copy(fft_discard)
+	# 	fft_discard_column[:, torso_loc] = np.zeros((doppler_bin, len(torso_loc)))
+	# 	mmax = np.max(fft_discard_column)
+	# 	row, column = np.where(fft_discard_column == mmax)
+	# 	row, column = row[0], column[0]
+	# 	if column >= 2:
+	# 		return column - 2, column + 3
+	# 	else:
+	# 		return 0, column+3
+	if column >= 2:
 		return column - 2, column + 3
-	return column-2, column+3
+	else:
+		return 0, column + 3
 	left = column
 	right = column + 1
 	if column > 0:
@@ -70,13 +76,13 @@ def root_mean_squared_error(y_true, y_pred):
 	indices = [0, 1, 2,3,4,5,6,7,8,9,10,11,12,13,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31]
 	return K.sqrt(K.mean(K.square((tf.gather(y_pred, indices, axis=1)*255) - (tf.gather(y_true, indices, axis=1)*255))))
 
-def get_spectograms(dop_dat, t_chunk, frames_per_sec, t_chunk_overlap=None, synthetic=False,zero_pad=False):
+def get_spectograms(dop_dat, t_chunk, frames_per_sec, bin_num=32, t_chunk_overlap=None, synthetic=False,zero_pad=False):
 	frame_overlap = 1
 	if t_chunk_overlap is not None:
 		frame_overlap = int(t_chunk_overlap * frames_per_sec)
 	frame_chunk = int(t_chunk * frames_per_sec)
 	if zero_pad == True:
-		zero_padding = np.zeros((32,frame_chunk-1))
+		zero_padding = np.zeros((bin_num,frame_chunk-1))
 		dop_dat_spec = np.hstack((zero_padding,np.transpose(dop_dat)))
 	else:
 		dop_dat_spec = np.transpose(dop_dat)

@@ -69,7 +69,7 @@ python doppler_from_vid.py --input_video YOUR_INPUT_VIDEO_FILE --model_path PATH
 Other options:
 	--visualize_mesh : output visualized radial velocity mesh (saved automatically in the output folder)
 	--doppler_gt : Use if the ground truth real world Doppler data is available for comparison
-```	
+```
 
 The script outputs the synthetic data signal (saved with the suffix `_output_signal`) in the same folder as the `input_video`. Reference plot showcased below.
 
@@ -114,8 +114,12 @@ Vid2Doppler makes use of [VIBE](https://github.com/mkocabas/VIBE) and [Psbody](h
 
 GPL v 2.0 License file present in repo. Please contact innovation@cmu.edu if you would like another license for your use.
 
- 
- 
+## Comments
+
+1. frames: frame index with a person in image; Frames_new: frame index after interpolating frames
+2. Orig_cam: camera positions corresponding to each frame; orig_cam_new: after interpolation
+3. Frames_common: frame indices that video (after interpolation) and UWB have in common
+4. Doppler_original: all range bins; doppler_gt: only critical range bins
 
 
 

@@ -78,16 +78,17 @@ def main(args):
             v = p_t_2 - p_t_1
             dot_prod = np.multiply(v, p_t_2).sum(axis=1)
             mag = np.linalg.norm(p_t_2, axis=1)
-            vertex_velocity = np.expand_dims(-(dot_prod / mag) * fps, axis=1)
+            vertex_velocity = np.expand_dims(-(dot_prod / mag) * fps, axis=1)   # movement between two frames * frame rate = velocity
             vertex_velocity_list.append(vertex_velocity)
 
 
     # compute velocity mean for human body using convolution
     velocity_map = np.array(vertex_velocity_list)
     velocity_map = velocity_map[:,:,0]
-    for j in range(velocity_map.shape[1]):
-       velocity_map[:,j] = np.convolve(velocity_map[:,j], \
-                                np.ones((5,))/5, mode='same')
+    for j in range(velocity_map.shape[1]):      # smooth
+       # velocity_map[:,j] = np.convolve(velocity_map[:,j], \
+       #                          np.ones((5,))/5, mode='same')
+       velocity_map[:, j] = np.convolve(velocity_map[:, j], np.ones((15,)) / 15, mode='same')
     velocity_map = np.expand_dims(velocity_map, axis=2)
 
     # save velocities and visibilities
@@ -110,13 +111,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--input_video', type=str,
-                        help='input video file')
+                        help='input video file', default="/home/mengjingliu/Vid2Doppler/data/2023_04_24/2023_04_24_17_34_30_ADL_zx/rgb.avi")
 
     parser.add_argument('--output_folder', type=str,
-                        help='output folder to write results')
+                        help='output folder to write results', default="/home/mengjingliu/Vid2Doppler/data/2023_04_24/2023_04_24_17_34_30_ADL_zx/output/")
 
-    parser.add_argument('--camera_orig', type=str, default="[0,0,10]",
-                        help='camera origin position')
+    parser.add_argument('--camera_orig', type=str, default="[0,0,0]",
+                        help='camera origin position')      # used to compute the radial projection of velocity
 
 
     args = parser.parse_args()

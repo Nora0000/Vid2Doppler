@@ -8,6 +8,8 @@ import cv2
 
 N_BINS = 32
 DISCARD_BINS = [14,15,16]
+# N_BINS = 16
+# DISCARD_BINS = [6, 7, 8]
 GAUSSIAN_BLUR = True
 GAUSSIAN_KERNEL = 5
 TIME_CHUNK = 1 # 1 second for creating the spectogram
@@ -19,8 +21,8 @@ def main(args):
     video_file = os.path.basename(args.input_video).replace('.mp4', '')
     video_file = video_file.replace('.avi', '')
     out_path = args.output_folder + '/' + video_file + '/'
-    video = cv2.VideoCapture("./" + args.input_video)
-    fps = video.get(cv2.CAP_PROP_FPS)
+    # video = cv2.VideoCapture("./" + args.input_video)
+    # fps = video.get(cv2.CAP_PROP_FPS)
 
     # get frame infomation
     num_frames = len([name for name in \
@@ -60,14 +62,14 @@ def main(args):
 
     model_path = args.model_path
     scale_vals = np.load(model_path + "scale_vals_new.npy")
-    scale_vals[1] = max(scale_vals[1], np.max(synth_doppler_dat))
-    scale_vals[3] = min(scale_vals[3], np.min(synth_doppler_dat))
-
-    number = len(synth_doppler_dat)
-    scale_vals[8:11] = (scale_vals[8:11] * scale_vals[11] + np.mean(synth_doppler_dat[:, DISCARD_BINS], axis=0) * number) / (
-            scale_vals[11] + number)
-    scale_vals[11] += number
-    np.save(os.path.join(model_path, "scale_vals_new.npy"), scale_vals)
+    # scale_vals[1] = max(scale_vals[1], np.max(synth_doppler_dat))
+    # scale_vals[3] = min(scale_vals[3], np.min(synth_doppler_dat))
+    #
+    # number = len(synth_doppler_dat)
+    # scale_vals[8:11] = (scale_vals[8:11] * scale_vals[11] + np.mean(synth_doppler_dat[:, DISCARD_BINS], axis=0) * number) / (
+    #         scale_vals[11] + number)
+    # scale_vals[11] += number
+    # np.save(os.path.join(model_path, "scale_vals_new.npy"), scale_vals)
     return np.max(synth_doppler_dat), np.min(synth_doppler_dat), scale_vals[8:11]
 
 
@@ -75,11 +77,13 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--input_video', type=str, help='input video file')
+    parser.add_argument('--input_video', type=str, help='input video file',
+                        default="/home/mengjingliu/Vid2Doppler/data/2023_04_24/2023_04_24_17_34_30_ADL_zx/rgb.avi")
 
-    parser.add_argument('--output_folder', type=str, help='output folder to write results')
+    parser.add_argument('--output_folder', type=str, help='output folder to write results',
+                        default="/home/mengjingliu/Vid2Doppler/data/2023_04_24/2023_04_24_17_34_30_ADL_zx/output/")
 
-    parser.add_argument('--model_path', type=str, help='Path to DL models')
+    parser.add_argument('--model_path', type=str, help='Path to DL models', default="../models/")
 
     args = parser.parse_args()
 
