@@ -35,7 +35,7 @@ def main(args):
         #                     (int(video.get(cv2.CAP_PROP_FRAME_WIDTH)), \
         #                     int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))))
         out = cv2.VideoWriter(args.output_folder + video_file + "/" + video_file \
-                              + "_test.mp4", fourcc, fps, \
+                              + "_3D_mesh.mp4", fourcc, fps, \
                               (int(video.get(cv2.CAP_PROP_FRAME_WIDTH)), \
                                int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))))
     else:
@@ -51,13 +51,14 @@ def main(args):
     output_path = os.path.join(args.output_folder, os.path.basename(\
                                 video_file).replace('.mp4', ''))
     output_path = output_path.replace('.avi', '')
-    if os.path.isfile(output_path + \
-                "/../../frames_new.npy"):
-        frames = np.load(output_path + \
-                    "/../../frames_new.npy", allow_pickle=True)
-    else:
-        frames = np.load(output_path + \
-                    "/../../frames.npy", allow_pickle=True)
+    # if os.path.isfile(output_path + \
+    #             "/../../frames_new.npy"):
+    #     frames = np.load(output_path + \
+    #                 "/../../frames_new.npy", allow_pickle=True)
+    # else:
+    #     frames = np.load(output_path + \
+    #                 "/../../frames.npy", allow_pickle=True)
+    frames = np.load(os.path.join(os.path.abspath(args.input_video), 'frames_common.npy')).astype(int)
     print("visualized frames: ", len(frames))
 
     # read frame info as numpy arrays from csv files
@@ -95,13 +96,17 @@ def main(args):
     # loop over frames
     count = 0
     for frame_idx in frames:
+        # if frame_idx < 300 or frame_idx > frames[-1] - 300:
+        #     continue
+        if frame_idx >= len(vertex_velocity):
+            break
         # capture frames in the video
         ret, frame = video.read()
         print("Visualizing Frame #" + str(count))
         count +=1
 
         # define renderer
-        if frame_idx == 0:
+        if count == 1:
             orig_height, orig_width = frame.shape[:2]
             renderer = VelocityRenderer(resolution=(orig_width, \
                                     orig_height), orig_img=True, \
@@ -174,13 +179,16 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--input_video', type=str,
-                        help='input video file')
+                        help='input video file',
+                        default="/home/mengjingliu/Vid2Doppler/data/2023_05_04/2023_05_04_17_07_45_han_jump/rgb.avi")
 
     parser.add_argument('--output_folder', type=str,
-                        help='output folder to write results')
+                        help='output folder to write results',
+                        default="/home/mengjingliu/Vid2Doppler/data/2023_05_04/2023_05_04_17_07_45_han_jump/output/")
 
     parser.add_argument('--wireframe', action='store_true',
-                        help='render all meshes as wireframes.')
+                        help='render all meshes as wireframes.',
+                        default=True)
 
     parser.add_argument('--concatenate_result', action='store_true',
                         help='output concatenate result of velocity and visibility.')

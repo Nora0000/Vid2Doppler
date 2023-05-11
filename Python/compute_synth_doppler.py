@@ -7,7 +7,7 @@ import argparse
 import cv2
 
 N_BINS = 32
-DISCARD_BINS = [14,15,16]
+DISCARD_BINS = [14, 15, 16, 17]
 # N_BINS = 16
 # DISCARD_BINS = [6, 7, 8]
 GAUSSIAN_BLUR = True
@@ -40,14 +40,23 @@ def main(args):
                     "/../../frames.npy", allow_pickle=True)
     print("frames: ", num_frames)
 
+    scale_vel = np.loadtxt(os.path.join(args.model_path, "scale_velocity.txt"))
+    v_min = scale_vel[0]
+    v_max = scale_vel[1]
+    v_lim = max(abs(v_max), abs(v_min))
+
     # compute synthetic doppler data
     synth_doppler_dat = []
     for frame_idx in frames:
         gen_doppler = np.genfromtxt(out_path + "/frame_velocity/frame_%06d.csv" % frame_idx, delimiter=',')
         velocity = gen_doppler[gen_doppler[:, 1]==1, 0]
+        distance = gen_doppler[gen_doppler[:, 1]==1, 2]
         # hist = np.histogram(velocity, bins=np.linspace(-2, 2, num=N_BINS+1))[0]     # change velocity range to be consistent with UWB
-        # hist = np.histogram(velocity, bins=np.linspace(-1.38, 1.38, num=N_BINS + 1))[0]   # FPS=80
-        hist = np.histogram(velocity, bins=np.linspace(-1, 1, num=N_BINS + 1))[0]   #fps=60
+        hist = np.histogram(velocity, bins=np.linspace(-1.38, 1.38, num=N_BINS + 1))[0]   # FPS=80
+        # hist = np.histogram(velocity, bins=np.linspace(-1, 1, num=N_BINS + 1))[0]   #fps=180
+        # hist = np.histogram(velocity, bins=np.linspace(-3, 3, num=N_BINS + 1), weights=1 / np.power(distance, 2))[0]
+        # hist = np.histogram(velocity, bins=np.linspace(-v_lim, v_lim, num=N_BINS + 1), weights=1 / np.power(distance, 2))[0]
+
         for bin_idx in DISCARD_BINS:      # don't ignore stationary parts.
             hist[bin_idx] = 0
         synth_doppler_dat.append(hist/gen_doppler.shape[0])
@@ -78,10 +87,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--input_video', type=str, help='input video file',
-                        default="/home/mengjingliu/Vid2Doppler/data/2023_04_24/2023_04_24_17_34_30_ADL_zx/rgb.avi")
+                        default="/home/mengjingliu/Vid2Doppler/data/2023_05_03/2023_05_03_16_34_39_mengjing_push_diagonal/rgb.avi")
 
     parser.add_argument('--output_folder', type=str, help='output folder to write results',
-                        default="/home/mengjingliu/Vid2Doppler/data/2023_04_24/2023_04_24_17_34_30_ADL_zx/output/")
+                        default="/home/mengjingliu/Vid2Doppler/data/2023_05_03/2023_05_03_16_34_39_mengjing_push_diagonal/output/")
 
     parser.add_argument('--model_path', type=str, help='Path to DL models', default="../models/")
 

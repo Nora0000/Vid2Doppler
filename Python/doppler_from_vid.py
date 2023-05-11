@@ -6,26 +6,21 @@ import time
 import numpy as np
 import shutil
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 
 def main(args):
 
 	begin_time = time.time()
 	folder_path = os.path.dirname(os.path.abspath(args.input_video))
-	os.system("python3 run_VIBE.py --input_video %s --output_folder %s" % (args.input_video, folder_path))
-
 	out_path = folder_path + "/output/"
 
-	os.system("python3 compute_position.py --input_video %s --output_folder %s" % (args.input_video, out_path))
-	os.system("python3 interpolate_frames.py --input_video %s --output_folder %s" % (args.input_video, out_path))
+	# os.system("python3 run_VIBE.py --input_video %s --output_folder %s" % (args.input_video, folder_path))
+	# os.system("python3 compute_position.py --input_video %s --output_folder %s" % (args.input_video, out_path))
+	# os.system("python3 interpolate_frames.py --input_video %s --output_folder %s" % (args.input_video, out_path))
 	os.system("python3 compute_velocity.py --input_video %s --output_folder %s" % (args.input_video, out_path))
-	# if args.visualize_mesh:
-	os.system("python3 compute_visualization.py --input_video %s --output_folder %s --wireframe" % (args.input_video, out_path))
 	os.system("python3 compute_synth_doppler.py --input_video %s --output_folder %s --model_path %s" % (args.input_video, out_path, args.model_path))
-	# if args.doppler_gt:
-	# os.system("python3 plot_synth_dop.py --input_video %s --model_path %s --doppler_gt" % (args.input_video, args.model_path))
-	# else:
-	os.system("python3 compute_doppler_gt.py --input_video %s" % args.input_video)
+	os.system("python3 compute_doppler_gt_new.py --input_video %s" % args.input_video)
+	# os.system("python3 compute_visualization.py --input_video %s --output_folder %s --wireframe" % (args.input_video, out_path))
 	os.system("python3 plot_synth_dop.py --input_video %s --model_path %s --doppler_gt" % (args.input_video, args.model_path))
 
 	# free all temporary memory
@@ -55,7 +50,8 @@ if __name__ == '__main__':
 
 	parser = argparse.ArgumentParser()
 
-	parser.add_argument('--input_video', type=str, help='Input video file', default="/home/mengjingliu/Vid2Doppler/data/2023_04_13/2023_04_13_18_41_17_Mengjing_push_1/rgb.avi")
+	parser.add_argument('--input_video', type=str, help='Input video file',
+	                    default="/home/mengjingliu/Vid2Doppler/data/2023_04_24/2023_04_24_17_34_30_ADL_zx/rgb.avi")
 
 	parser.add_argument('--visualize_mesh', help='Render visibility mesh and velocity map', action='store_true')
 

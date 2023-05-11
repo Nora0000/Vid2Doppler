@@ -11,10 +11,11 @@ import matplotlib.pyplot as plt
 # from sklearn.metrics import accuracy_score
 # from sklearn.model_selection import train_test_split
 import cv2
-from helper import color_scale, chose_central_rangebins
+from helper import color_scale, chose_central_rangebins, first_peak
 import matplotlib
+from scipy.signal import find_peaks
 
-path = "../data/2023_05_02/2023-05-03-17-16-46_mengjing_zigzag_diagonal_fps180"
+path = "../data/2023_05_03/2023_05_03_16_34_39_mengjing_push_diagonal"
 
 # synDop = np.load(os.path.join(path, "output/rgb/synth_doppler.npy"))
 # sns.heatmap(synDop)
@@ -28,13 +29,9 @@ path = "../data/2023_05_02/2023-05-03-17-16-46_mengjing_zigzag_diagonal_fps180"
 imag = np.loadtxt(path + '/frame_buff_imag.txt')
 real = np.loadtxt(path + '/frame_buff_real.txt')
 num = min(len(imag), len(real))
-data_complex = (np.array(real[:num, :]) + 1j * np.array(imag[:num, :]))[900:-900, :]
+data_complex = (np.array(real[:num, :]) + 1j * np.array(imag[:num, :]))[1800:-1800, :]
 range_profile = np.abs(data_complex)
-mean_dis = np.mean(range_profile, axis=0)
-range_profile = range_profile - mean_dis
-mean_dis_ = np.mean(range_profile, axis=0)
-sns.heatmap(range_profile)
-plt.show()
+
 
 doppler = []
 doppler_bin_num = 32
@@ -42,11 +39,27 @@ DISCARD_BINS = [14, 15, 16, 17]
 
 # locate torso
 std_dis = np.std(range_profile, axis=0)[:94]
+left, right = first_peak(std_dis)
+print("left: {}, right: {}.".format(left, right))
+np.savetxt(os.path.join(path, "std_of_range_profile.txt"), std_dis)
+
+plt.axvline(x=left, color='r')
+plt.axvline(x=right, color='r')
 plt.plot(np.arange(0, std_dis.shape[0], 1), std_dis)
-plt.ticklabel_format(style='sci', scilimits=(0, 0), axis='both')
+plt.title("first peak is {}~{}".format(left, right))
+plt.ticklabel_format(style='sci', scilimits=(0, 0), axis='y')
 plt.ylabel("standard deviation")
 plt.xlabel("range bin")
 plt.show()
+
+mean_dis = np.mean(range_profile, axis=0)
+range_profile = range_profile - mean_dis
+plt.axvline(x=left, color='r')
+plt.axvline(x=right, color='r')
+sns.heatmap(range_profile)
+plt.show()
+
+
 
 range_bin_num = 94
 
@@ -61,13 +74,15 @@ for i in range(doppler_bin_num, data_complex_.shape[0], 2):
 	dop = dop[:, :range_bin_num]
 	dop[14:18, :] = np.zeros((4, range_bin_num))
 
-	# select range bins with the highest energy
-	mmax = np.max(dop[:, :range_bin_num_])
-	row, column = np.where(dop == mmax)
-	row, column = row[0], column[0]
+	fft_1d = np.sum(dop[:, left:right], axis=1)
 
-	fft_1d = np.zeros(doppler_bin_num)
-	fft_1d[row] = mmax
+	# select range bins with the highest energy
+	# mmax = np.max(dop[:, :range_bin_num_])
+	# row, column = np.where(dop == mmax)
+	# row, column = row[0], column[0]
+	#
+	# fft_1d = np.zeros(doppler_bin_num)
+	# fft_1d[row] = mmax
 
 	# left = max(column-2, 0)
 	# right = min(column+2, range_bin_num)
@@ -78,7 +93,7 @@ for i in range(doppler_bin_num, data_complex_.shape[0], 2):
 
 
 doppler_1d = np.array(doppler_1d)
-np.save(os.path.join(path, 'doppler_gt.npy'), doppler_1d)
+# np.save(os.path.join(path, 'doppler_gt.npy'), doppler_1d)
 sns.heatmap(np.array(doppler_1d))
 plt.show()
 
@@ -92,29 +107,3 @@ np.save(os.path.join(path, 'range_doppler_rb94.npy'), doppler)
 # doppler = (doppler - doppler_mean)[:, :, :range_bin_num]
 print(np.max(doppler))
 print(np.min(doppler))
-doppler[:, 14:17, :] = np.zeros((doppler.shape[0], 3, range_bin_num))
-# mmax = np.percentile(doppler, 99.99)
-mmax = np.max(doppler)
-mmin = np.min(doppler)
-
-height, width = doppler[0].shape[0], doppler[0].shape[1]
-# doppler[doppler>mmax] = mmax
-flag = True
-for d in doppler:
-
-	# mmax = np.max(d)
-	# row, column = np.where(d == mmax)
-	# row, column = row[0], column[0]
-	# dd = np.zeros((doppler_bin_num, range_bin_num))
-	# # dd[row, column] = d[row, column]
-	# dd[row, column] = 1
-
-	dd = color_scale(d, matplotlib.colors.Normalize(vmin=mmin, vmax=mmax), "push")
-	if flag:
-		out_vid = cv2.VideoWriter(os.path.join(path, 'mengjing_push_new.mp4'),
-		                          cv2.VideoWriter_fourcc(*'mp4v'),
-		                          24, (dd.shape[1], dd.shape[0]))
-		flag = False
-	out_vid.write(dd)
-	# cv2.imshow("xx", dd)
-out_vid.release()

@@ -5,6 +5,28 @@ import imutils
 from matplotlib import cm
 from tensorflow.python.keras import backend as K
 import tensorflow as tf
+from scipy.signal import find_peaks
+import os
+import matplotlib.pyplot as plt
+
+
+def first_peak(std_dis):
+	peaks, _ = find_peaks(std_dis, height=np.percentile(std_dis, 50))
+	peaks_, _ = find_peaks(-std_dis)
+
+	first_peak = peaks[0]
+	second_peak = peaks[1]
+	left = 0
+	right = second_peak
+	for pp in peaks_:
+		if pp < first_peak:
+			left = max(left, pp)
+		else:
+			break
+
+	print("first peak: {}, left: {}, right: {}".format(first_peak, left, right))
+
+	return left, right
 
 
 def downsample_bins(original=120, target=32):
@@ -102,3 +124,23 @@ def get_spectograms(dop_dat, t_chunk, frames_per_sec, bin_num=32, t_chunk_overla
 			spectogram.append(spec)
 	spectogram = np.array(spectogram)
 	return spectogram
+
+
+def compute_fr_from_ts(path = "/home/mengjingliu/Vid2Doppler/data/2023_04_24/2023_04_24_17_44_27_ADL_zh"):
+
+	rgb_ts = np.loadtxt(os.path.join(path, "rgb_ts.txt"))
+
+	pre_ts = rgb_ts[0]
+	frame_rates = []
+	cnt = 0
+	for ts in rgb_ts:
+		if ts - pre_ts < 1:
+			cnt += 1
+		else:
+			frame_rates.append(cnt)
+			cnt = 0
+			pre_ts = ts
+	frame_rates = np.array(frame_rates)
+	plt.plot(np.arange(0, len(frame_rates), 1), frame_rates)
+	plt.show()
+	print(np.mean(frame_rates))

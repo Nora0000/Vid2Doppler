@@ -16,7 +16,7 @@ def main(args, input_video="", model_path="", if_doppler_gt=False):
 	autoencoder = load_model(model_path + "autoencoder_weights.hdf5",
 	                         custom_objects={'root_mean_squared_error': root_mean_squared_error})
 	scale_vals = np.load(model_path + "scale_vals_new.npy")
-	fps = 24
+	fps = 30
 	TIME_CHUNK = 3
 	max_dopVal = scale_vals[0]
 	max_synth_dopVal = scale_vals[1]
@@ -24,9 +24,9 @@ def main(args, input_video="", model_path="", if_doppler_gt=False):
 	min_synth_dopVal = scale_vals[3]
 	mean_discard_bins = scale_vals[4:7]
 	mean_synth_discard_bins = scale_vals[8:11]
-	# DISCARD_BINS = [14, 15, 16, 17]
-	bin_num=16
-	DISCARD_BINS = [6, 7, 8]
+	DISCARD_BINS = [14, 15, 16, 17]
+	bin_num=32
+	# DISCARD_BINS = [6, 7, 8]
 
 	if input_video == "":
 		vid_f = args.input_video
@@ -76,16 +76,17 @@ def main(args, input_video="", model_path="", if_doppler_gt=False):
 	video_idx = 0
 	ret, frame = cap.read()
 	for idx in range(0, len(frames_common)):
+	# for idx in range(0, 1200):
 		while video_idx != frames_common[idx]:
 			ret, frame = cap.read()
 			video_idx += 1
 		original_synth = color_scale(synth_spec_test[idx],
-		                             matplotlib.colors.Normalize(vmin=0, vmax=np.max(synth_spec_test)),
+		                             matplotlib.colors.Normalize(vmin=np.min(synth_spec_test), vmax=np.max(synth_spec_test)),
 		                             "Initial Synthetic Doppler")
 		od = dop_spec_test[idx]
 		# od[14:17, :] = np.zeros((3, 72))
 
-		original_dop = color_scale(od, matplotlib.colors.Normalize(vmin=0, vmax=np.max(dop_spec_test)),
+		original_dop = color_scale(od, matplotlib.colors.Normalize(vmin=np.min(dop_spec_test), vmax=np.max(dop_spec_test)),
 		                           "Real World Doppler")
 		# recon = color_scale(decoded[idx], matplotlib.colors.Normalize(vmin=0, vmax=np.max(decoded)),
 		#                     "Final Synthetic Doppler")
@@ -121,7 +122,7 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 
 	parser.add_argument('--input_video', type=str, help='Input video file',
-	                    default='/home/mengjingliu/Vid2Doppler/data/2023_04_24/2023_04_24_17_34_30_ADL_zx/rgb.avi')
+	                    default='/home/mengjingliu/Vid2Doppler/data/2023_05_04/2023_05_04_18_07_20_mengjing_push/rgb.avi')
 
 	parser.add_argument('--model_path', type=str, help='Path to DL models', default='../models/')
 
