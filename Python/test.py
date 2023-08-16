@@ -1,133 +1,37 @@
-import os
-# import subprocess
-# import random
-# import math
-# import time
 import numpy as np
-# import shutil
+import math
+from matplotlib import pyplot as plt
+import os
 import seaborn as sns
-import matplotlib.pyplot as plt
-# from sklearn import svm
-# from sklearn.metrics import accuracy_score
-# from sklearn.model_selection import train_test_split
+import argparse
+from helper import get_spectograms, color_scale, chose_central_rangebins
 import cv2
-from helper import color_scale, chose_central_rangebins, compute_fr_from_ts
 import matplotlib
-from scipy.signal import find_peaks
+from helper import load_txt_to_datetime
+from segment import segment
+from prepare_data import load_data, augment_data
+from tensorflow.python.keras.models import Sequential
+from tensorflow.python.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
+from tensorflow.keras.optimizers import Adam, schedules
+import tensorflow as tf
+from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.models import load_model
+from helper import root_mean_squared_error
 
-# compute_fr_from_ts("/home/mengjingliu/Vid2Doppler/data/2023_05_04/2023_05_04_18_07_20_mengjing_push")
+# os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
+# cnn test
+model_path = "/home/mengjingliu/Vid2Doppler/models/encoder_s6"
+X_train = np.load(os.path.join(model_path, "X_train.npy"))
+y_train = np.load(os.path.join(model_path, "y_train.npy"))
+# path6 = "/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR6"
+# x6_syn = np.load(os.path.join(path6, "X_4_syn.npy"))
 
+model = load_model(os.path.join(model_path, "autoencoder_weights.hdf5"), custom_objects={'root_mean_squared_error': root_mean_squared_error})
 
-scale_vel = np.loadtxt(os.path.join("../models/", "scale_velocity.txt"))
-# v_min = scale_vel[0]
-# v_max = scale_vel[1]
-v_min = 1
-v_max = -1
+X_test = np.load(os.path.join(model_path, "X_test.npy"))
+y_test = np.load(os.path.join(model_path, "y_test.npy"))
 
-path = "/home/mengjingliu/Vid2Doppler/data/2023_05_05/2023_05_04_18_07_20_mengjing_push"
-
-if os.path.isfile(path + \
-                  "/frames_new.npy"):
-	frames = np.load(path + \
-	                 "/frames_new.npy", allow_pickle=True)
-else:
-	frames = np.load(path + \
-	                 "/frames.npy", allow_pickle=True)
-print("frames: ", len(frames))
-
-cnt = 0
-velocity_list = []
-max_lim = []
-for frame_idx in frames:
-	if frame_idx < 300 or frame_idx > frames[-1]-300:
-		continue
-	gen_doppler = np.genfromtxt(path + "/output/rgb/frame_velocity/frame_%06d.csv" % frame_idx, delimiter=',')
-	velocity = gen_doppler[gen_doppler[:, 1]==1, 0]
-	# hist = np.histogram(velocity, bins=np.linspace(-3, 3, num=32 + 1))[0]  # fps=180
-	# for bin_idx in [14, 15, 16]:  # don't ignore stationary parts.
-	# 	hist[bin_idx] = 0
-
-	velocity_list.extend(velocity)
-
-	max_lim.append(np.max(np.abs(velocity)))
-
-
-	cnt += 1
-	if cnt <= 500:
-		# sort data
-		velocity_sorted = np.sort(velocity)
-
-		# calculate CDF values
-		y = 1. * np.arange(len(velocity_sorted)) / (len(velocity_sorted) - 1)
-
-		# plot CDF
-		plt.plot(velocity_sorted, y)
-
-	# v_max = max(v_max, np.max(velocity))
-	# v_min = min(v_min, np.min(velocity))
-	# synth_doppler_dat.append(hist / gen_doppler.shape[0])
-
-plt.show()
-
-
-# sort data
-velocity_sorted = np.sort(np.array(max_lim))
-
-# calculate CDF values
-y = 1. * np.arange(len(velocity_sorted)) / (len(velocity_sorted) - 1)
-
-# plot CDF
-plt.plot(velocity_sorted, y)
-plt.title("CDF of maximum velocity in each frame")
-plt.show()
-
-velocity_list = np.array(velocity_list)
-print(np.percentile(velocity_list, 99))
-print(np.percentile(velocity_list, 1))
-
-
-# # sort data
-# velocity_sorted = np.sort(velocity_list)
-#
-# # calculate CDF values
-# y = 1. * np.arange(len(velocity_sorted)) / (len(velocity_sorted) - 1)
-#
-# # plot CDF
-# plt.plot(velocity_sorted, y)
-# plt.show()
-# print(v_max)
-# print(v_min)
-
-# np.savetxt(os.path.join("../models", "scale_velocity.txt"), np.array([v_min, v_max]))
-
-
-# syn_doppler = np.load(os.path.join(path, "output/rgb/synth_doppler.npy"))
-# sns.heatmap(syn_doppler)
-# plt.show()
-# sns.heatmap(syn_doppler[400:1000, 5:27])
-# plt.show()
-# print(1)
-
-
-# plot fps
-# fps = np.loadtxt(os.path.join(path, "frame_rates.txt"))
-# plt.plot(np.arange(0, len(fps), 1), fps, label="FPS=120")
-# plt.ylabel("fps")
-# plt.xlabel("time (s)")
-# plt.show()
-
-# doppler_1d = np.load(os.path.join(path, "doppler_gt.npy"))
-# sns.heatmap(doppler_1d[1000:1500, :])
-# plt.show()
-
-# doppler = np.load(os.path.join(path, "range_doppler_rb94.npy"))
-# doppler_1d = np.sum(doppler[:, :, left:right], axis=2)
-# hp = sns.heatmap(doppler_1d[2000:3000, :])
-# hp.figure.savefig("test.png")
-# plt.show()
-# doppler_1d = np.sum(doppler[:, :, 17:20], axis=2)
-# sns.heatmap(doppler_1d[2000:3000, :])
-# plt.show()
-# print(1)
-
+score = model.evaluate(X_test, y_test, verbose=0)
+print("Test loss:", score[0])
+print("Test accuracy:", score[1])

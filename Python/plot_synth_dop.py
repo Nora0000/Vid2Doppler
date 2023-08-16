@@ -7,6 +7,7 @@ import pickle
 import cv2
 import argparse
 
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 def main(args, input_video="", model_path="", if_doppler_gt=False):
 	if model_path == "":
@@ -16,14 +17,14 @@ def main(args, input_video="", model_path="", if_doppler_gt=False):
 	autoencoder = load_model(model_path + "autoencoder_weights.hdf5",
 	                         custom_objects={'root_mean_squared_error': root_mean_squared_error})
 	scale_vals = np.load(model_path + "scale_vals_new.npy")
-	fps = 30
+	fps = 24
 	TIME_CHUNK = 3
-	max_dopVal = scale_vals[0]
-	max_synth_dopVal = scale_vals[1]
-	min_dopVal = scale_vals[2]
-	min_synth_dopVal = scale_vals[3]
-	mean_discard_bins = scale_vals[4:7]
-	mean_synth_discard_bins = scale_vals[8:11]
+	max_dopVal = scale_vals[2]
+	max_synth_dopVal = scale_vals[0]
+	min_dopVal = scale_vals[3]
+	min_synth_dopVal = scale_vals[1]
+	# mean_discard_bins = scale_vals[4:7]
+	# mean_synth_discard_bins = scale_vals[8:11]
 	DISCARD_BINS = [14, 15, 16, 17]
 	bin_num=32
 	# DISCARD_BINS = [6, 7, 8]
@@ -65,18 +66,20 @@ def main(args, input_video="", model_path="", if_doppler_gt=False):
 		dop_spec_test = dop_spec
 		# dop_spec_test = (dop_spec - min_dopVal) / (max_dopVal - min_dopVal)
 
-	# decoded = autoencoder.predict(synth_spec_test)
-	# decoded = decoded[:, :, :, 0]
-	# # decoded[DISCARD_BINS, :] -= mean_discard_bins[:, np.newaxis]
-	# decoded = rolling_window_combine(decoded)
+	synth_spec_in = (synth_spec_pred - min_synth_dopVal) / (max_synth_dopVal - min_synth_dopVal)
+	decoded = autoencoder.predict(synth_spec_in[:, :, :, np.newaxis])
+	decoded = decoded[:, :, :, 0]
+	# decoded[DISCARD_BINS, :] -= mean_discard_bins[:, np.newaxis]
+	decoded = rolling_window_combine(decoded)
 	#
 	# y_max = max(np.max(decoded), np.max(synth_spec_test), np.max(dop_spec_test))
 	# norm = matplotlib.colors.Normalize(vmin=0, vmax=y_max)
 
 	video_idx = 0
 	ret, frame = cap.read()
-	for idx in range(0, len(frames_common)):
-	# for idx in range(0, 1200):
+	# frames_common = frames_common[240:-240]
+	for idx in range(240, len(frames_common)-240):
+	# for idx in frames_common:
 		while video_idx != frames_common[idx]:
 			ret, frame = cap.read()
 			video_idx += 1
@@ -88,11 +91,11 @@ def main(args, input_video="", model_path="", if_doppler_gt=False):
 
 		original_dop = color_scale(od, matplotlib.colors.Normalize(vmin=np.min(dop_spec_test), vmax=np.max(dop_spec_test)),
 		                           "Real World Doppler")
-		# recon = color_scale(decoded[idx], matplotlib.colors.Normalize(vmin=0, vmax=np.max(decoded)),
+		# recon = color_scale(decoded[idx], matplotlib.colors.Normalize(vmin=np.min(decoded), vmax=np.max(decoded)),
 		#                     "Final Synthetic Doppler")
 		in_frame = color_scale(frame, None, "Input Video")
-		# output = np.hstack([in_frame, original_dop, original_synth, recon])
 		output = np.hstack([in_frame, original_dop, original_synth])
+		# output = np.hstack([in_frame, original_dop, original_synth, recon])
 		if idx == 0:
 			height, width = output.shape[0], output.shape[1]
 			out_vid = cv2.VideoWriter(in_folder + '/' + vid_file_name + '_output_signal.mp4',

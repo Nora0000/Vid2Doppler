@@ -52,12 +52,12 @@ def main(args):
         velocity = gen_doppler[gen_doppler[:, 1]==1, 0]
         distance = gen_doppler[gen_doppler[:, 1]==1, 2]
         # hist = np.histogram(velocity, bins=np.linspace(-2, 2, num=N_BINS+1))[0]     # change velocity range to be consistent with UWB
-        hist = np.histogram(velocity, bins=np.linspace(-1.38, 1.38, num=N_BINS + 1))[0]   # FPS=80
-        # hist = np.histogram(velocity, bins=np.linspace(-1, 1, num=N_BINS + 1))[0]   #fps=180
+        # hist = np.histogram(velocity, bins=np.linspace(-1.38, 1.38, num=N_BINS + 1))[0]   # FPS=80
+        hist = np.histogram(velocity, bins=np.linspace(-3, 3, num=N_BINS + 1))[0]   #fps=180
         # hist = np.histogram(velocity, bins=np.linspace(-3, 3, num=N_BINS + 1), weights=1 / np.power(distance, 2))[0]
         # hist = np.histogram(velocity, bins=np.linspace(-v_lim, v_lim, num=N_BINS + 1), weights=1 / np.power(distance, 2))[0]
 
-        for bin_idx in DISCARD_BINS:      # don't ignore stationary parts.
+        for bin_idx in DISCARD_BINS:      # ignore stationary parts.
             hist[bin_idx] = 0
         synth_doppler_dat.append(hist/gen_doppler.shape[0])
 

@@ -8,12 +8,43 @@ import tensorflow as tf
 from scipy.signal import find_peaks
 import os
 import matplotlib.pyplot as plt
+from scipy.signal import butter, lfilter, filtfilt
+import datetime
+
+
+def butter_lowpass(cutoff, fs, order=5):
+	nyquist = 0.5 * fs
+	normal_cutoff = cutoff / nyquist
+	b, a = butter(order, normal_cutoff, btype='low', analog=False)
+	return b, a
+
+
+def apply_lowpass_filter(data, normal_cutoff, order=5):
+	b, a = butter(order, normal_cutoff, btype='low', analog=False)
+	# b, a = butter_lowpass(cutoff_freq, fs, order=order)
+	filtered_data = lfilter(b, a, data)
+	return filtered_data
+
+
+def butter_highpass(cutoff, fs, order=5):
+	nyquist = 0.5 * fs
+	normal_cutoff = cutoff / nyquist
+	b, a = butter(order, normal_cutoff, btype='high', analog=False)
+	return b, a
+
+
+def apply_highpass_filter(data, normal_cutoff, order=5):
+	b, a = butter(order, normal_cutoff, btype='high', analog=False)
+	filtered_data = filtfilt(b, a, data)
+	return filtered_data
 
 
 def first_peak(std_dis):
-	peaks, _ = find_peaks(std_dis, height=np.percentile(std_dis, 50))
-	peaks_, _ = find_peaks(-std_dis)
-
+	std_dis_ = apply_lowpass_filter(std_dis, 0.5)
+	# height = max(np.percentile(std_dis_, 50), np.max(std_dis_) / 3)
+	peaks, _ = find_peaks(std_dis_, height=np.percentile(std_dis_, 60))
+	peaks_, _ = find_peaks(-std_dis_)
+	
 	first_peak = peaks[0]
 	second_peak = peaks[1]
 	left = 0
@@ -23,20 +54,21 @@ def first_peak(std_dis):
 			left = max(left, pp)
 		else:
 			break
-
+	
 	print("first peak: {}, left: {}, right: {}".format(first_peak, left, right))
-
+	
 	return left, right
 
 
 def downsample_bins(original=120, target=32):
 	# down sample from 120 bins to 32 bins, symmetrically
-	indices = np.linspace(0, int(original/2-1), int(target/2)).astype(int)
-	indices = sorted(np.concatenate((indices, original-3 - indices)))
+	indices = np.linspace(0, int(original / 2 - 1), int(target / 2)).astype(int)
+	indices = sorted(np.concatenate((indices, original - 3 - indices)))
 	return indices
 
 
-def chose_central_rangebins(d_fft, range_bin_num=188, torso_loc=[], DISCARD_BINS=[14, 15, 16, 17], threshold=0.1, ARM_LEN=30, doppler_bin=32):
+def chose_central_rangebins(d_fft, range_bin_num=188, torso_loc=[], DISCARD_BINS=[14, 15, 16, 17], threshold=0.1,
+                            ARM_LEN=30, doppler_bin=32):
 	fft_discard = np.copy(d_fft)
 	# discard velocities around 0
 	for j in DISCARD_BINS:
@@ -65,7 +97,7 @@ def chose_central_rangebins(d_fft, range_bin_num=188, torso_loc=[], DISCARD_BINS
 		for left in range(column - 1, 0, -1):
 			if np.max(fft_discard[:, left]) < threshold * mmax:
 				break
-	if column < range_bin_num-1:
+	if column < range_bin_num - 1:
 		for right in range(column + 1, range_bin_num, 1):
 			if np.max(fft_discard[:, right]) < threshold * mmax:
 				break
@@ -75,61 +107,69 @@ def chose_central_rangebins(d_fft, range_bin_num=188, torso_loc=[], DISCARD_BINS
 
 
 def rolling_window_combine(X_in):
-	for i in range(1,len(X_in)):
-		X_in[i][:,:-1] = X_in[i-1][:,1:]
+	for i in range(1, len(X_in)):
+		X_in[i][:, :-1] = X_in[i - 1][:, 1:]
 	return X_in
 
-def color_scale(img, norm,text=None):
+
+def color_scale(img, norm, text=None):
 	if len(img.shape) == 2:
-		img = cm.magma(norm(img),bytes=True)
+		img = cm.magma(norm(img), bytes=True)
 	img = imutils.resize(img, height=300)
 	if img.shape[2] == 4:
 		img = cv2.cvtColor(img, cv2.COLOR_BGRA2RGB)
 	if text is not None:
-		img = cv2.putText(img, text, (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255), 2, cv2.LINE_AA)
+		img = cv2.putText(img, text, (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
 	return img
 
+
 def rolling_average(X_in):
-	for i in range(1,X_in.shape[0]-1):
-		X_in[i] = (X_in[i] + X_in[i+1] + X_in[i-1])/3
+	for i in range(1, X_in.shape[0] - 1):
+		X_in[i] = (X_in[i] + X_in[i + 1] + X_in[i - 1]) / 3
 	return X_in
 
-def root_mean_squared_error(y_true, y_pred):
-	indices = [0, 1, 2,3,4,5,6,7,8,9,10,11,12,13,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31]
-	return K.sqrt(K.mean(K.square((tf.gather(y_pred, indices, axis=1)*255) - (tf.gather(y_true, indices, axis=1)*255))))
 
-def get_spectograms(dop_dat, t_chunk, frames_per_sec, bin_num=32, t_chunk_overlap=None, synthetic=False,zero_pad=False):
+def root_mean_squared_error(y_true, y_pred):
+	return K.sqrt(K.mean(K.square((y_pred * 255) - (y_true * 255))))
+	# indices = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]
+	# return K.sqrt(
+	# 	K.mean(K.square((tf.gather(y_pred, indices, axis=0) * 255) - (tf.gather(y_true, indices, axis=0) * 255))))
+	
+
+
+def get_spectograms(dop_dat, t_chunk, frames_per_sec, bin_num=32, t_chunk_overlap=None, synthetic=False,
+                    zero_pad=False):
 	frame_overlap = 1
-	if t_chunk_overlap is not None:
-		frame_overlap = int(t_chunk_overlap * frames_per_sec)
-	frame_chunk = int(t_chunk * frames_per_sec)
+	# if t_chunk_overlap is not None:
+	# 	frame_overlap = int(t_chunk_overlap * frames_per_sec)
+	# frame_chunk = int(t_chunk * frames_per_sec)
+	frame_chunk = 72
 	if zero_pad == True:
-		zero_padding = np.zeros((bin_num,frame_chunk-1))
-		dop_dat_spec = np.hstack((zero_padding,np.transpose(dop_dat)))
+		zero_padding = np.zeros((bin_num, frame_chunk - 1))
+		dop_dat_spec = np.hstack((zero_padding, np.transpose(dop_dat)))
 	else:
 		dop_dat_spec = np.transpose(dop_dat)
 	spectogram = []
 	if zero_pad == True:
-		for i in range(0,len(dop_dat), frame_overlap):
-			spec = dop_dat_spec[:,i:i+frame_chunk]
+		for i in range(0, len(dop_dat), frame_overlap):
+			spec = dop_dat_spec[:, i:i + frame_chunk]
 			if synthetic == True:
-					spec = cv2.GaussianBlur(spec,(5,5),0)
+				spec = cv2.GaussianBlur(spec, (5, 5), 0)
 			spectogram.append(spec)
 	else:
-		for i in range(0,len(dop_dat)-frame_chunk, frame_overlap):
-			spec = dop_dat_spec[:,i:i+frame_chunk]
+		for i in range(0, len(dop_dat) - frame_chunk, frame_overlap):
+			spec = dop_dat_spec[:, i:i + frame_chunk]
 			if synthetic == True:
 				if zero_pad == True:
-					spec = cv2.GaussianBlur(spec,(5,5),0)
+					spec = cv2.GaussianBlur(spec, (5, 5), 0)
 			spectogram.append(spec)
 	spectogram = np.array(spectogram)
 	return spectogram
 
 
-def compute_fr_from_ts(path = "/home/mengjingliu/Vid2Doppler/data/2023_04_24/2023_04_24_17_44_27_ADL_zh"):
-
+def compute_fr_from_ts(path="/home/mengjingliu/Vid2Doppler/data/2023_04_24/2023_04_24_17_44_27_ADL_zh"):
 	rgb_ts = np.loadtxt(os.path.join(path, "rgb_ts.txt"))
-
+	
 	pre_ts = rgb_ts[0]
 	frame_rates = []
 	cnt = 0
@@ -144,3 +184,31 @@ def compute_fr_from_ts(path = "/home/mengjingliu/Vid2Doppler/data/2023_04_24/202
 	plt.plot(np.arange(0, len(frame_rates), 1), frame_rates)
 	plt.show()
 	print(np.mean(frame_rates))
+
+
+def datetime_from_str(str):
+    try:
+        r = datetime.datetime.strptime(str.strip('\n'), '%Y-%m-%d %H:%M:%S.%f')
+    except Exception as e:
+        try:
+            r = datetime.datetime.strptime(str.strip('\n'), '%Y-%m-%d %H:%M:%S')
+        except Exception as e:
+            try:
+                r = datetime.datetime.strptime(str.strip('\n'), '%Y-%m-%dT%H:%M:%S.%fZ')
+            except Exception as e:
+                try:
+                    r = datetime.datetime.strptime(str.strip('\n'), '%Y-%m-%dT%H:%M:%SZ')
+                except Exception as e:
+                    try:
+                        r = datetime.datetime.strptime(str.strip('\n'), '%Y-%m-%dT%H:%M:%S.%fZZ')
+                    except Exception as e:
+                        print(str)
+                        return ""
+    return r
+
+
+def load_txt_to_datetime(path, filename):
+    # load txt file which has a str of datetime in each line. convert str to datetime, return the list of all lines.
+    with open(os.path.join(path, filename), 'r') as f:
+        lines = f.readlines()
+        return [datetime_from_str(line) for line in lines]

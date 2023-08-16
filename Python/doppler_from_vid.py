@@ -6,7 +6,7 @@ import time
 import numpy as np
 import shutil
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+# os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 
 def main(args):
 
@@ -14,8 +14,8 @@ def main(args):
 	folder_path = os.path.dirname(os.path.abspath(args.input_video))
 	out_path = folder_path + "/output/"
 
-	# os.system("python3 run_VIBE.py --input_video %s --output_folder %s" % (args.input_video, folder_path))
-	# os.system("python3 compute_position.py --input_video %s --output_folder %s" % (args.input_video, out_path))
+	os.system("python3 run_VIBE.py --input_video %s --output_folder %s" % (args.input_video, folder_path))
+	os.system("python3 compute_position.py --input_video %s --output_folder %s" % (args.input_video, out_path))
 	# os.system("python3 interpolate_frames.py --input_video %s --output_folder %s" % (args.input_video, out_path))
 	os.system("python3 compute_velocity.py --input_video %s --output_folder %s" % (args.input_video, out_path))
 	os.system("python3 compute_synth_doppler.py --input_video %s --output_folder %s --model_path %s" % (args.input_video, out_path, args.model_path))
@@ -28,6 +28,16 @@ def main(args):
 	shutil.rmtree(image_folder)
 
 	print("time cost: {} minutes".format((time.time() - begin_time) / 60))
+
+	# doppler_gt = np.load(os.path.join(folder_path, "doppler_gt.npy"))
+	# doppler_syn = np.load(os.path.join(folder_path, "output/rgb/synth_doppler.npy"))
+	# frames_common = np.load(os.path.join(folder_path, "frames_common.npy"))
+	# if os.path.isfile(os.path.join(folder_path, 'frames_new.npy')):
+	# 	frames = np.load(os.path.join(folder_path, 'frames_new.npy'), allow_pickle=True)
+	# else:
+	# 	frames = np.load(os.path.join(folder_path, 'frames.npy'), allow_pickle=True)
+	# indices = np.isin(frames, frames_common)
+	# return doppler_gt, doppler_syn[indices, :]
 
 
 def compute_synth_doppler_all():
@@ -51,7 +61,7 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 
 	parser.add_argument('--input_video', type=str, help='Input video file',
-	                    default="/home/mengjingliu/Vid2Doppler/data/2023_04_24/2023_04_24_17_34_30_ADL_zx/rgb.avi")
+	                    default="/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR6/2023_07_19_21_59_01_sit/rgb.avi")
 
 	parser.add_argument('--visualize_mesh', help='Render visibility mesh and velocity map', action='store_true')
 

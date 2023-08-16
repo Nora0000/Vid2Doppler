@@ -33,15 +33,29 @@ def main(args):
                 + "/../../orig_cam.csv", delimiter=',')
     new_cameras = []
 
+    # get timestamps
+    orig_ts_rgb = np.loadtxt(os.path.join(os.path.dirname(args.input_video), 'rgb_ts.txt'))
+    if frames[0] > 0:
+        new_ts_rgb = [0] * frames[0]
+    else:
+        new_ts_rgb = []
+
     # interpolate frames
     np.save(output_path + "/../../frames_new.npy", np.arange(start_frame, end_frame + 1))
     for i in range(len(frames) - 1):
         new_cameras.append(orig_cameras[i])
+        new_ts_rgb.append(orig_ts_rgb[int(frames[i]/2)])
         if frames[i] + 1 != frames[i+1]:
             for f in range(frames[i] + 1, frames[i+1]):
 
                 # get camera tansformation from the previous avaalable frame
                 new_cameras.append(orig_cameras[i])
+
+                previous_ts = orig_ts_rgb[int(frames[i]/2)]
+                next_ts = orig_ts_rgb[int(frames[i+1]/2)]
+                current_ts = (previous_ts * (frames[i+1] - f) + next_ts * (f - frames[i])) / (frames[i+1] - frames[i])
+
+                new_ts_rgb.append(current_ts)
 
                 # read frame info for human body
                 previous_frame = np.genfromtxt(args.output_folder + video_file \
@@ -86,6 +100,8 @@ def main(args):
     new_cameras.append(orig_cameras[-1])
     np.savetxt(args.output_folder + video_file \
             + "/../../orig_cam_new.csv", np.array(new_cameras), delimiter=",")
+    new_ts_rgb.append(orig_ts_rgb[int(frames[-1]/2)])
+    np.savetxt(os.path.join(os.path.dirname(args.input_video), 'rgb_ts_new.txt'), np.array(new_ts_rgb))
 
 
 if __name__ == '__main__':

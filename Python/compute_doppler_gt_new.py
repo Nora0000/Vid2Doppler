@@ -1,3 +1,10 @@
+"""
+根据视频的每一帧的时间戳，选择对应的UWB帧，计算doppler_original (2-d) and doppler_gt (1-d).
+Need to run doppler_from_vid firstly. Align with video data.
+save frames_common, doppler_original, doppler_gt.
+
+"""
+
 import numpy as np
 import math
 from matplotlib import pyplot as plt
@@ -21,13 +28,14 @@ def main(args, input_video="", model_path=""):
 	# threshold = 0.1
 	doppler_bin_num = 32
 	DISCARD_BINS = [14, 15, 16, 17]
+	discard_time = 30
 	# range_bin_num = 96
 	fps_uwb = 180
-	fps_rgb = 20
+	fps_rgb = 24
 
-	if model_path == "":
-		model_path = args.model_path
-	scale_vals = np.load(model_path + "scale_vals_new.npy")
+	# if model_path == "":
+	# 	model_path = args.model_path
+	# scale_vals = np.load(model_path + "scale_vals_new.npy")
 
 	if input_video == "":
 		input_video = args.input_video
@@ -41,8 +49,12 @@ def main(args, input_video="", model_path=""):
 	imag_file = os.path.join(in_folder, 'frame_buff_imag.txt')
 	real_file = os.path.join(in_folder, 'frame_buff_real.txt')
 	ts_uwb_file = os.path.join(in_folder, 'times.txt')
-	ts_rgb_file = os.path.join(in_folder, 'rgb_ts.txt')
 	ts_uwb = np.loadtxt(ts_uwb_file)  # load timestamps
+	# if os.path.isfile(os.path.join(in_folder, 'rgb_ts_new.txt')):
+	# 	ts_rgb = np.loadtxt(os.path.join(in_folder, 'rgb_ts_new.txt'))
+	# else:
+	# 	ts_rgb = np.loadtxt(os.path.join(in_folder, 'rgb_ts.txt'))
+	ts_rgb_file = os.path.join(in_folder, 'rgb_ts.txt')
 	ts_rgb = np.loadtxt(ts_rgb_file)
 
 	data_imag = np.loadtxt(imag_file)      # load imaginary part
@@ -55,13 +67,16 @@ def main(args, input_video="", model_path=""):
 	data_complex = data_real + 1j * data_imag  # compute complex number
 
 	range_profile = np.abs(data_complex)
-	std_dis = np.std(range_profile[1800:-1800, :], axis=0)		# ignore first and last 10 seconds
+	std_dis = np.std(range_profile[discard_time*fps_uwb:-1800, :], axis=0)		# ignore first and last 10 seconds
 
-	left, right = first_peak(std_dis)
-	print("left: {}, right: {}.".format(left, right))
-
-	# left = 35
-	# right = 42
+	if os.path.exists(os.path.join(in_folder, "range.npy")):
+		# 有些数据有人在附近动，影响了first peak的选择。手动看range profile然后选了存下来
+		range_ = np.load(os.path.join(in_folder, "range.npy"))
+		left = range_[0]
+		right = range_[1]
+	else:
+		left, right = first_peak(std_dis)
+		print("left: {}, right: {}.".format(left, right))
 
 	plt.plot(np.arange(0, std_dis.shape[0], 1), std_dis)
 	plt.axvline(x=left, color='r')
@@ -70,27 +85,31 @@ def main(args, input_video="", model_path=""):
 	plt.ylabel("standard deviation")
 	plt.xlabel("range bin")
 	plt.title("first peak is {}~{}".format(left, right))
-	# plt.show()
 	plt.savefig(os.path.join(in_folder, "std_of_range_profile.png"))
+	plt.show()
 
 	mean_dis = np.mean(range_profile, axis=0)
 	range_profile = range_profile - mean_dis
-	hp = sns.heatmap(range_profile[1800:-1800, :])
+	hp = sns.heatmap(range_profile[discard_time*fps_uwb:-1800, :70])
+	plt.axvline(x=left, color='r')
+	plt.axvline(x=right, color='r')
 	plt.title("range profile")
 	plt.ylabel("time (1/fps second)")
 	plt.xlabel("range bin")
 	# plt.show()
 	plt.title("range profile")
 	hp.figure.savefig(os.path.join(in_folder, "range_profile.png"))
+	plt.show()
 
 
 	# mean_comp = np.mean(data_complex, axis=0)
 	# data_complex = data_complex - mean_comp
 
-	if os.path.isfile(in_folder + "/frames_new.npy"):
-		frames = np.load(in_folder + "/frames_new.npy", allow_pickle=True)
-	else:
-		frames = np.load(in_folder + "/frames.npy", allow_pickle=True)
+	# if os.path.isfile(in_folder + "/frames_new.npy"):
+	# 	frames = np.load(in_folder + "/frames_new.npy", allow_pickle=True)
+	# else:
+	# 	frames = np.load(in_folder + "/frames.npy", allow_pickle=True)
+	frames = np.load(in_folder + "/frames.npy", allow_pickle=True)
 
 	doppler_gt = []  # doppler data
 	doppler_original = []
@@ -100,7 +119,7 @@ def main(args, input_video="", model_path=""):
 	# uwb_idx = doppler_bin_num
 	start_time_UWB = ts_uwb[0]	# Assume the timestamp of the first frame is correct.
 	for frame_idx in frames[:-1]:
-		if (frame_idx <= fps_rgb * 10) or (frame_idx >= (frames[-1] - fps_rgb * 10)):
+		if (frame_idx <= fps_rgb * discard_time) or (frame_idx >= (frames[-1] - fps_rgb * 10)):
 			continue
 
 		rgb_ts = float(ts_rgb[frame_idx])
@@ -129,8 +148,8 @@ def main(args, input_video="", model_path=""):
 
 		fft_gt[DISCARD_BINS, :] = np.zeros((len(DISCARD_BINS), right-left))
 
-		scale_vals[0] = max(scale_vals[0], np.max(fft_gt))
-		scale_vals[2] = min(scale_vals[2], np.min(fft_gt))
+		# scale_vals[0] = max(scale_vals[0], np.max(fft_gt))
+		# scale_vals[2] = min(scale_vals[2], np.min(fft_gt))
 
 		# sum over range
 		fft_gt = np.sum(fft_gt, axis=1)
@@ -141,7 +160,11 @@ def main(args, input_video="", model_path=""):
 	np.save(os.path.join(in_folder, 'doppler_gt.npy'), doppler_gt)
 	np.save(os.path.join(in_folder, 'frames_common.npy'), np.array(frames_common))
 	np.save(os.path.join(in_folder, 'uwb_indices.npy'), np.array(uwb_indices))
-
+	
+	sns.heatmap(doppler_gt)
+	plt.savefig("doppler_gt.png")
+	plt.show()
+	
 	# number = len(doppler_gt)
 	# scale_vals[4:7] = (scale_vals[4:7] * scale_vals[7] + np.mean(doppler_gt[:, DISCARD_BINS], axis=0) * number) / (
 	# 			scale_vals[7] + number)
@@ -196,7 +219,7 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 
 	parser.add_argument('--input_video', type=str, help='Input video file',
-	                    default='/home/mengjingliu/Vid2Doppler/data/2023_05_03/2023_05_03_16_38_29_mengjing_zigzag/rgb.avi')
+	                    default='/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR4/2023_07_19_21_16_08_push/rgb.avi')
 
 	parser.add_argument('--model_path', type=str, help='Path to DL models', default="../models/")
 

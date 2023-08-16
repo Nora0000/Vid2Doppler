@@ -48,6 +48,13 @@ def main(args):
 
     # render each frame
     index = 0
+
+    np.save(output_path + "/../../frames_original.npy", frames, allow_pickle=True)
+
+    if args.interpolate:
+        # interpolate, double
+        frames = frames * 2
+
     for frame_idx in frames:
 
         # loop over each frame
@@ -73,6 +80,7 @@ def main(args):
                                         str(vertex_visibility[i])])
         index += 1
 
+    np.save(output_path + "/../../frames.npy", frames, allow_pickle=True)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -85,6 +93,9 @@ if __name__ == '__main__':
 
     parser.add_argument('--wireframe', action='store_true',
                         help='render all meshes as wireframes.')
+
+    parser.add_argument('--interpolate', action='store_true',
+                        help='whether to interpolate frames.')
 
     parser.add_argument('--camera_orig', type=str, default="[0,0,0.001]",
                         help='camera origin position')      # used as the direction of camera to decide occlusions

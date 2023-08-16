@@ -84,8 +84,8 @@ def main(args):
             v = p_t_2 - p_t_1
             dot_prod = np.multiply(v, p_t_2).sum(axis=1)
             mag = np.linalg.norm(p_t_2, axis=1)
-            vertex_velocity = np.expand_dims(-(dot_prod / mag) * fps, axis=1)   # movement between two frames * frame rate = velocity
-            # vertex_velocity = np.expand_dims((dot_prod / mag) * fps, axis=1)
+            # vertex_velocity = np.expand_dims(-(dot_prod / mag) * fps, axis=1)   # movement between two frames * frame rate = velocity
+            vertex_velocity = np.expand_dims((dot_prod / mag) * fps, axis=1)
             vertex_velocity_list.append(vertex_velocity)
 
             vertex_distance = np.expand_dims(mag, axis=1)
