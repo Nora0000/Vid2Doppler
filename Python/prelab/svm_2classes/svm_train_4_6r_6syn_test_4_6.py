@@ -10,6 +10,7 @@ from sklearn.metrics import accuracy_score, recall_score, f1_score
 # from keras.datasets import fashion_mnist
 
 # os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+N= 2
 
 new_model_path = "../../../models/svm_train_4_6r_6syn_test_4_6/"
 if not os.path.exists(new_model_path):
@@ -19,8 +20,10 @@ if not os.path.exists(new_model_path):
 path4 = "/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR4"
 x4 = np.load(os.path.join(path4, "X_2.npy"))
 y4 = np.load(os.path.join(path4, "Y_2.npy")) - 1
-x4_aug, y4_aug = augment_data(x4, y4)
-X_train_4, X_test_4, y_train_4, y_test_4 = train_test_split(x4_aug, y4_aug, test_size=0.2, random_state=42)
+# x4_aug, y4_aug = augment_data(x4, y4)
+# X_train_4, X_test_4, y_train_4, y_test_4 = train_test_split(x4_aug, y4_aug, test_size=0.2, random_state=42)
+X_train_4, X_test_4, y_train_4, y_test_4 = train_test_split(x4, y4, test_size=0.2, random_state=42)
+X_train_4_aug, y_train_4_aug = augment_data(X_train_4, y_train_4)
 
 # sensor 6 synthetic data for training
 path6 = "/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR6"
@@ -28,24 +31,32 @@ x6_syn = np.load(os.path.join(path6, "X_2_syn.npy"))
 y6_syn = np.load(os.path.join(path6, "Y_2_syn.npy")) - 1
 x6_aug_syn, y6_aug_syn = augment_data(x6_syn, y6_syn)
 
-X_train = np.vstack((X_train_4, x6_aug_syn))
-y_train = np.concatenate((y_train_4, y6_aug_syn))
+X_train = np.vstack((X_train_4_aug, x6_aug_syn))
+y_train = np.concatenate((y_train_4_aug, y6_aug_syn))
 
 # sensor 6 real data for test
 # sensor 6 real data for test
 path6 = "/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR6"
 x6_real = np.load(os.path.join(path6, "X_2.npy"))
 y6_real = np.load(os.path.join(path6, "Y_2.npy")) - 1
-x6_aug, y6_aug = augment_data(x6_real, y6_real)
-x6r, X_test_6, y6r, y_test_6 = train_test_split(x6_aug, y6_aug, test_size=0.2, random_state=42)
-X_train_6_real, _, y_train_6_real, _ = train_test_split(x6r, y6r, test_size=0.99, random_state=42)
+# x6_aug, y6_aug = augment_data(x6_real, y6_real)
+# x6r, X_test_6, y6r, y_test_6 = train_test_split(x6_aug, y6_aug, test_size=0.2, random_state=42)
+# X_train_6_real, _, y_train_6_real, _ = train_test_split(x6r, y6r, test_size=0.99, random_state=42)
+x6r, X_test_6, y6r, y_test_6 = train_test_split(x6_real, y6_real, test_size=0.2, random_state=42)
+selected = []
+for i in range(N):
+	selected_t = np.random.choice(np.where(y6r==i)[0], 1)
+	selected.extend(selected_t)
+x6_real_selected = x6r[selected, :, :]
+y6_real_selected = np.arange(0, N)
+X_train_6_real, y_train_6_real = augment_data(x6_real_selected, y6_real_selected)
 
 # X_train = X_train_4
 # y_train = y_train_4
 # X_test = X_test_4
 # y_test = y_test_4
-X_train = np.vstack((X_train, X_train_6_real))
-y_train = np.concatenate((y_train, y_train_6_real))
+# X_train = np.vstack((X_train, X_train_6_real))
+# y_train = np.concatenate((y_train, y_train_6_real))
 X_test = np.vstack((X_test_4, X_test_6))
 y_test = np.concatenate((y_test_4, y_test_6))
 
