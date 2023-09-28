@@ -12,7 +12,6 @@ import argparse
 from helper import root_mean_squared_error, get_spectograms
 import matplotlib.pyplot as plt
 from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.initializers import GlorotUniform
 from sklearn.model_selection import train_test_split
 from tensorflow.python.keras import backend as K
 import h5py
@@ -23,8 +22,9 @@ from prepare_data import interpolate
 from torch.nn import UpsamplingBilinear2d
 import math
 from tensorflow.keras.callbacks import LearningRateScheduler
+from scipy.ndimage import gaussian_filter1d
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 
 def plot_history(history, filename):
@@ -129,66 +129,86 @@ def main(args):
 	path4 = "/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR4"
 	x4 = np.load(os.path.join(path4, "X_4.npy"))
 	# y4 = np.load(os.path.join(path4, "Y_4.npy"))
-	x4_syn = np.load(os.path.join(path4, "X_4_syn_filtered.npy"))
+	x4_syn = np.load(os.path.join(path4, "X_4_syn.npy"))
 	# y4_syn = np.load(os.path.join(path4, "Y_4_syn.npy"))
 	path6 = "/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR6"
 	x6 = np.load(os.path.join(path6, "X_4.npy"))
 	# y6 = np.load(os.path.join(path6, "Y_4.npy"))
-	x6_syn = np.load(os.path.join(path6, "X_4_syn_filtered.npy"))
+	x6_syn = np.load(os.path.join(path6, "X_4_syn.npy"))
 	# y6_syn = np.load(os.path.join(path6, "Y_4_syn.npy"))
-	# X = np.vstack((x4_syn, x6_syn))
-	# y = np.vstack((x4, x6))
-	X = x6_syn
-	y = x6
+	X = np.vstack((x4_syn, x6_syn))
+	y = np.vstack((x4, x6))
+	# X = x6_syn
+	# y = x6
 	X_aug, _ = augment_data(X, [1] * len(X))
 	y_aug, _ = augment_data(y, [1] * len(y))
 	X_aug = UpsamplingBilinear2d(size=(32, 52))(torch.tensor(X_aug[np.newaxis, :, :, :])).numpy()[0, :, :, :]
 	y_aug = UpsamplingBilinear2d(size=(32, 52))(torch.tensor(y_aug[np.newaxis, :, :, :])).numpy()[0, :, :, :]
 	X_aug = np.delete(X_aug, [14, 15, 16, 17], axis=1)
 	y_aug = np.delete(y_aug, [14, 15, 16, 17], axis=1)
+	for i in range(X_aug.shape[0]):
+		for j in range(52):
+			X_aug[i, :, j] = gaussian_filter1d(X_aug[i, :, j], 3)
+	X_aug = (X_aug - np.min(X_aug)) / (np.max(X_aug) - np.min(X_aug))
+	y_aug = (y_aug - np.min(y_aug)) / (np.max(y_aug) - np.min(y_aug))
 	X_train, X_test, y_train, y_test = train_test_split(X_aug, y_aug, test_size=0.2, random_state=42)
 	X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.1, random_state=42)
-	X_train = (X_train - np.min(X_train)) / (np.max(X_train) - np.min(X_train))
-	X_test = (X_test - np.min(X_test)) / (np.max(X_test) - np.min(X_test))
-	y_train = (y_train - np.min(y_train)) / (np.max(y_train) - np.min(y_train))
-	y_test = (y_test - np.min(y_test)) / (np.max(y_test) - np.min(y_test))
-	X_val = (X_val - np.min(X_val)) / (np.max(X_val) - np.min(X_val))
-	y_val = (y_val - np.min(y_val)) / (np.max(y_val) - np.min(y_val))
+	# X_train = (X_train - np.min(X_train)) / (np.max(X_train) - np.min(X_train))
+	# X_test = (X_test - np.min(X_test)) / (np.max(X_test) - np.min(X_test))
+	# y_train = (y_train - np.min(y_train)) / (np.max(y_train) - np.min(y_train))
+	# y_test = (y_test - np.min(y_test)) / (np.max(y_test) - np.min(y_test))
+	# X_val = (X_val - np.min(X_val)) / (np.max(X_val) - np.min(X_val))
+	# y_val = (y_val - np.min(y_val)) / (np.max(y_val) - np.min(y_val))
 	
-	model_path = "../models/encoder_s6_2/"
+	model_path = "../models/encoder_s4_s6_larger_model_3/"
 	if not os.path.exists(model_path):
 		os.mkdir(model_path)
 	
 	np.save(os.path.join(model_path, "X_test.npy"), X_test)
 	np.save(os.path.join(model_path, "y_test.npy"), y_test)
+	np.save(os.path.join(model_path, "X_train.npy"), X_train)
+	np.save(os.path.join(model_path, "y_train.npy"), y_train)
 	
 	# Define the input shape
 	input_shape = (28, 52, 1)
 	
 	# Encoder
 	input_img = Input(shape=input_shape)
-	x = Conv2D(8, (3, 3), activation='relu', padding='same', strides=(2, 2))(input_img)
-	x = Dropout(0.2)(x)
+	x = Conv2D(16, (3, 3), activation='relu', padding='same', strides=(2, 2))(input_img)
+	x = Conv2D(16, (3, 3), activation='relu', padding='same', strides=(1, 1))(x)
+	# x = Dropout(0.2)(x)
 	# x = MaxPooling2D((2, 2), padding='same')(x)
-	x = Conv2D(16, (3, 3), activation='relu', padding='same', strides=(2, 2))(x)
-	x = Dropout(0.2)(x)
+	x = Conv2D(32, (3, 3), activation='relu', padding='same', strides=(2, 2))(x)
 	x = Conv2D(32, (3, 3), activation='relu', padding='same', strides=(1, 1))(x)
-	x = Dropout(0.2)(x)
+	# x = Dropout(0.2)(x)
+	x = Conv2D(64, (3, 3), activation='relu', padding='same', strides=(2, 2))(x)
+	x = Conv2D(64, (3, 3), activation='relu', padding='same', strides=(1, 1))(x)
+	x = Conv2D(128, (3, 3), activation='relu', padding='same', strides=(1, 1))(x)
+	x = Conv2D(128, (3, 3), activation='relu', padding='same', strides=(1, 1))(x)
+	x = Conv2D(128, (3, 3), activation='relu', padding='same', strides=(1, 1))(x)
+	# x = Dropout(0.2)(x)
 	# encoded = MaxPooling2D((2, 2), padding='same')(x)
 	x = Flatten()(x)
-	encoded = Dense(128, activation="relu")(x)
-	encoded = Dropout(0.2)(encoded)
+	encoded = Dense(5824, activation="relu")(x)
+	# encoded = Dropout(0.2)(encoded)
 	
 	# Decoder
-	x = Dense(2912, activation="relu")(encoded)
-	x = Dropout(0.2)(x)
-	x = Reshape(target_shape=(7, 13, 32))(x)
+	x = Dense(5824, activation="relu")(encoded)
+	# x = Dropout(0.2)(x)
+	x = Reshape(target_shape=(7, 13, 64))(x)
 	# x = Conv2DTranspose(32, (3, 3), activation='relu', padding='same', strides=(1, 1))(x)
-	x = Conv2DTranspose(16, (3, 3), activation='relu', padding='same', strides=(2, 2))(x)
-	x = Dropout(0.2)(x)
+	x = Conv2DTranspose(128, (3, 3), activation='relu', padding='same', strides=(1, 1))(x)
+	x = Conv2DTranspose(128, (3, 3), activation='relu', padding='same', strides=(1, 1))(x)
+	x = Conv2DTranspose(128, (3, 3), activation='relu', padding='same', strides=(1, 1))(x)
+	x = Conv2DTranspose(64, (3, 3), activation='relu', padding='same', strides=(2, 2))(x)
+	x = Conv2DTranspose(64, (3, 3), activation='relu', padding='same', strides=(1, 1))(x)
+	x = Conv2DTranspose(32, (3, 3), activation='relu', padding='same', strides=(2, 2))(x)
+	x = Conv2DTranspose(32, (3, 3), activation='relu', padding='same', strides=(1, 1))(x)
+	# x = Dropout(0.2)(x)
 	# x = UpSampling2D((2, 2))(x)
-	x = Conv2DTranspose(8, (3, 3), activation='relu', padding='same', strides=(2, 2))(x)
-	x = Dropout(0.2)(x)
+	x = Conv2DTranspose(16, (3, 3), activation='relu', padding='same', strides=(1, 1))(x)
+	x = Conv2DTranspose(16, (3, 3), activation='relu', padding='same', strides=(1, 1))(x)
+	# x = Dropout(0.2)(x)
 	# x = UpSampling2D((2, 2))(x)
 	decoded = Conv2DTranspose(1, (3, 3), activation='sigmoid', padding='same', strides=(1, 1))(x)
 	
@@ -200,14 +220,8 @@ def main(args):
 	# 	initial_learning_rate=1e-4,
 	# 	decay_steps=10000,
 	# 	decay_rate=0.999)
-	lr = 1e-3
+	lr = 1e-6
 	# opt = Adam(lr)
-	# def lr_schedule(epoch):  # drop by 1/2 every 10 epochs
-	# 	initial_lr = 1e-4
-	# 	drop = 0.5
-	# 	epochs_drop = 5
-	# 	lr = max(initial_lr * math.pow(drop, math.floor((1 + epoch / 5) / epochs_drop)), 5e-5)
-	# 	return lr
 	# lr_scheduler = LearningRateScheduler(lr_schedule)
 	autoencoder.compile(optimizer=Adam(lr), loss=root_mean_squared_error)
 	
@@ -217,20 +231,24 @@ def main(args):
 	history_all = {}
 	best_val_loss = 100
 	batch_size = 16
-	cnt = 0
 	for i in range(1000):
 		
-		if history_all != {} and np.mean(history_all['loss'][-40:-20]) - np.mean(history_all["loss"][-20:]) < 0.1:
-			lr = max(1/2 * lr, 1e-6)
-			cnt += 1
-			if cnt >= 3:
-				batch_size = max(1/2*batch_size, 1)
+		if 0 <= i <= 50:
+			lr = 1e-6 * max((2 * i), 1)
 		else:
-			cnt = 0
+			lr = max(lr / (i - 3), 1e-6)
+			batch_size = max(int(batch_size / 2), 1)
 		autoencoder.compile(optimizer=Adam(lr), loss=root_mean_squared_error)
-		print("\n\n---------------------------epoch: {}, lr: {}, bs: {}-------------------------------\n\n".format(i, lr, batch_size))
+		print("\n\n---------------------------epoch: {}, lr: {}, bs: {} -------------------------------\n\n".format(i, lr, batch_size))
 		
-		#
+		# def lr_schedule(epoch):  # drop by 1/2 every 10 epochs
+		# 	initial_lr = 0.5e-3
+		# 	drop = 0.5
+		# 	epochs_drop = 10
+		# 	lr = initial_lr * math.pow(drop, math.floor((1 + epoch / 10) / epochs_drop))
+		# 	return lr
+		# lr = lr * math.pow(0.5, math.floor(i / 5))
+		# autoencoder.compile(optimizer=Adam(lr), loss=root_mean_squared_error)
 		# if i > 5:
 		# 	batch_size = 8
 		# if i > 10:

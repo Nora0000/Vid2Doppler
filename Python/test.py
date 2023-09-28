@@ -17,8 +17,13 @@ import tensorflow as tf
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.models import load_model
 from helper import root_mean_squared_error
+from scipy.ndimage import gaussian_filter1d
+
 
 # os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+range = np.array([5, 17])
+np.save("/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR6/2023_07_19_21_31_18_draw_circle/synth_range.npy", range)
+exit(0)
 
 # cnn test
 model_path = "/home/mengjingliu/Vid2Doppler/models/encoder_s6"

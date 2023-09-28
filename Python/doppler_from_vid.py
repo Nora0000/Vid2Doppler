@@ -6,7 +6,7 @@ import time
 import numpy as np
 import shutil
 
-# os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 
 def main(args):
 
@@ -14,11 +14,11 @@ def main(args):
 	folder_path = os.path.dirname(os.path.abspath(args.input_video))
 	out_path = folder_path + "/output/"
 
-	os.system("python3 run_VIBE.py --input_video %s --output_folder %s" % (args.input_video, folder_path))
-	os.system("python3 compute_position.py --input_video %s --output_folder %s" % (args.input_video, out_path))
+	# os.system("python3 run_VIBE.py --input_video %s --output_folder %s" % (args.input_video, folder_path))
+	# os.system("python3 compute_position.py --input_video %s --output_folder %s" % (args.input_video, out_path))
 	# os.system("python3 interpolate_frames.py --input_video %s --output_folder %s" % (args.input_video, out_path))
-	os.system("python3 compute_velocity.py --input_video %s --output_folder %s" % (args.input_video, out_path))
-	os.system("python3 compute_synth_doppler.py --input_video %s --output_folder %s --model_path %s" % (args.input_video, out_path, args.model_path))
+	# os.system("python3 compute_velocity.py --input_video %s --output_folder %s" % (args.input_video, out_path))
+	# os.system("python3 compute_synth_doppler.py --input_video %s --output_folder %s --model_path %s" % (args.input_video, out_path, args.model_path))
 	os.system("python3 compute_doppler_gt_new.py --input_video %s" % args.input_video)
 	# os.system("python3 compute_visualization.py --input_video %s --output_folder %s --wireframe" % (args.input_video, out_path))
 	os.system("python3 plot_synth_dop.py --input_video %s --model_path %s --doppler_gt" % (args.input_video, args.model_path))
@@ -61,7 +61,7 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 
 	parser.add_argument('--input_video', type=str, help='Input video file',
-	                    default="/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR6/2023_07_19_21_59_01_sit/rgb.avi")
+	                    default="/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR5/2023_07_19_22_07_42_bend/rgb.avi")
 
 	parser.add_argument('--visualize_mesh', help='Render visibility mesh and velocity map', action='store_true')
 

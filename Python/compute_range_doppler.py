@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 import numpy as np
 import os
 from os import listdir
@@ -7,6 +6,7 @@ from scipy.ndimage import gaussian_filter1d
 import argparse
 import cv2
 import seaborn as sns
+import matplotlib.pyplot as plt
 
 N_BINS = 32
 DISCARD_BINS = [14, 15, 16, 17]
@@ -42,29 +42,50 @@ def main(args):
         frames = np.load(output_path + \
                     "/../../frames.npy", allow_pickle=True)
     print("frames: ", num_frames)
-
+    
+    range_ = np.load(os.path.join(in_path, "synth_range.npy"))
+    left, right = range_[0], range_[1]
+    left = (9.9/188) * (left)
+    right = (9.9 / 188) * (right)
+    
     # compute synthetic doppler data
-    range_profile = []
+    synth_doppler_dat = []
     for frame_idx in frames:
         gen_doppler = np.genfromtxt(out_path + "/frame_velocity/frame_%06d.csv" % frame_idx, delimiter=',')
-        distance = gen_doppler[gen_doppler[:, 1]==1, 2]
-        hist = np.histogram(distance, bins=np.linspace(0, 9.9, num=188+1))[0]
+        velocity = gen_doppler[:, 0]
+        distance = gen_doppler[:, 2]
+        visibility = gen_doppler[:, 1]
+        # velocity = gen_doppler[gen_doppler[:, 1]==1, 0]
+        # distance = gen_doppler[gen_doppler[:, 1]==1, 2]
+        range_in = np.ones(len(distance))
+        range_in[distance<=left] = 0
+        range_in[distance>=right] = 0
+        enability = np.logical_and(range_in, visibility)
+        velocity = velocity[enability==1]
+        distance = distance[enability==1]
+        
+        # hist = np.histogram(velocity, bins=np.linspace(-2, 2, num=N_BINS+1))[0]     # change velocity range to be consistent with UWB
+        # hist = np.histogram(velocity, bins=np.linspace(-1.38, 1.38, num=N_BINS + 1))[0]   # FPS=80
+        hist = np.histogram(velocity, bins=np.linspace(-3, 3, num=N_BINS + 1))[0]   #fps=180
+        # hist = np.histogram(velocity, bins=np.linspace(-3, 3, num=N_BINS + 1), weights=1 / np.power(distance, 2))[0]
+        # hist = np.histogram(velocity, bins=np.linspace(-v_lim, v_lim, num=N_BINS + 1), weights=1 / np.power(distance, 2))[0]
 
-        range_profile.append(hist/gen_doppler.shape[0])
+        for bin_idx in DISCARD_BINS:      # ignore stationary parts.
+            hist[bin_idx] = 0
+        synth_doppler_dat.append(hist/gen_doppler.shape[0])
 
-    range_profile = np.array(range_profile)
-
-    # if GAUSSIAN_BLUR:           # Don't need Gaussian blur? ignore discard bins in training
-    #     for i in range(len(synth_doppler_dat)):
-    #         synth_doppler_dat[i] = gaussian_filter1d(synth_doppler_dat[i], GAUSSIAN_KERNEL)
-
-    np.save(out_path+"/range_profile.npy", range_profile)
+    synth_doppler_dat = np.array(synth_doppler_dat)
+    np.save(out_path+"/synth_doppler_cutRange.npy", synth_doppler_dat)
+    sns.heatmap(synth_doppler_dat[1000: 1500, :])
+    plt.savefig(os.path.join(in_path, "synth_doppler_cutRange.png"))
+    plt.show()
     
-    tmp = np.copy(range_profile[1000: 1400, :50])
-    mm = np.mean(tmp, axis=0)
-    tmp = tmp - mm
-    sns.heatmap(tmp)
-    plt.savefig(os.path.join(in_path, "synth_range_profile.png"))
+    if GAUSSIAN_BLUR:           # Don't need Gaussian blur? ignore discard bins in training
+        for i in range(len(synth_doppler_dat)):
+            synth_doppler_dat[i] = gaussian_filter1d(synth_doppler_dat[i], GAUSSIAN_KERNEL)
+    np.save(out_path + "/synth_doppler_cutRange_filtered.npy", synth_doppler_dat)
+    sns.heatmap(synth_doppler_dat[1000: 1500, :])
+    plt.savefig(os.path.join(in_path, "synth_doppler_cutRange_filtered.png"))
     plt.show()
 
     # model_path = args.model_path
@@ -88,7 +109,7 @@ if __name__ == '__main__':
                         default="/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR6/2023_07_19_21_31_18_draw_circle/rgb.avi")
 
     parser.add_argument('--output_folder', type=str, help='output folder to write results',
-                        default="/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR6/2023_07_19_21_31_18_draw_circle/output")
+                        default="/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR6/2023_07_19_21_31_18_draw_circle/output/")
 
     parser.add_argument('--model_path', type=str, help='Path to DL models', default="../models/")
 

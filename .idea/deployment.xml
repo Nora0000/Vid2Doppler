@@ -1,12 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" autoUpload="Always" serverName="MOCA-GPU1" remoteFilesAllowedToDisappearOnAutoupload="false">
+  <component name="PublishConfigData" autoUpload="Always" serverName="mengjingliu@130.245.191.166:22 password" remoteFilesAllowedToDisappearOnAutoupload="false" confirmBeforeUploading="false">
+    <option name="confirmBeforeUploading" value="false" />
     <serverData>
-      <paths name="MOCA-GPU1">
+      <paths name="mengjingliu@130.245.191.166:22 password">
         <serverdata>
           <mappings>
-            <mapping deploy="/home/mengjingliu/Vid2Doppler" local="$PROJECT_DIR$" web="/" />
+            <mapping deploy="/home/mengjingliu/Vid2Doppler" local="$PROJECT_DIR$" />
           </mappings>
+          <excludedPaths>
+            <excludedPath local="true" path="$PROJECT_DIR$/Environment" />
+            <excludedPath local="true" path="$PROJECT_DIR$/models" />
+            <excludedPath local="true" path="$PROJECT_DIR$/media" />
+          </excludedPaths>
         </serverdata>
       </paths>
     </serverData>

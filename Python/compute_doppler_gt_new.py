@@ -90,7 +90,7 @@ def main(args, input_video="", model_path=""):
 
 	mean_dis = np.mean(range_profile, axis=0)
 	range_profile = range_profile - mean_dis
-	hp = sns.heatmap(range_profile[discard_time*fps_uwb:-1800, :70])
+	hp = sns.heatmap(range_profile[discard_time*fps_uwb:discard_time*fps_uwb + fps_uwb*20, :70])
 	plt.axvline(x=left, color='r')
 	plt.axvline(x=right, color='r')
 	plt.title("range profile")
@@ -171,7 +171,7 @@ def main(args, input_video="", model_path=""):
 	# scale_vals[7] += number
 	# np.save(os.path.join(model_path, "scale_vals_new.npy"), scale_vals)
 
-	return scale_vals
+	# return scale_vals
 
 
 def plot_doppler_gt(doppler_gt, in_folder, vid_file_name, fps=24):

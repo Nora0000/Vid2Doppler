@@ -25,6 +25,7 @@ With 10 continuous static frames, an activity ends.
 
 	"""
 	d = np.load(os.path.join(path, filename))[120:-120, :]
+	# d = np.load(os.path.join(path, filename))[120:1000, :]
 	d[:, DISCARD_BINS] = np.zeros((len(d), len(DISCARD_BINS)))
 	# d = apply_lowpass_filter(d, 0.3)
 	
@@ -109,9 +110,9 @@ With 10 continuous static frames, an activity ends.
 	
 
 if __name__ == "__main__":
-	path = "/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR6/2023_07_19_21_26_50_step"
+	path = "/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR6/2023_07_19_22_07_44_bend"
 	filename = "doppler_gt.npy"
 	# segs, sigmas = segment(path, filename, width=10, threshold=2.6, DISCARD_BINS=[15, 16, 17])     # sit4
 	# segs, sigmas = segment(path, filename, width=10, threshold=2, DISCARD_BINS=[15, 16, 17])     # push4, circle6
 	# segs, sigmas = segment(path, filename, width=3, threshold=2, DISCARD_BINS=[15, 16, 17])     # step4
-	segs, sigmas = segment(path, filename, width=3, threshold=2.3, DISCARD_BINS=[15, 16, 17])     # step6
+	segs, sigmas = segment(path, filename, width=3, threshold=2, DISCARD_BINS=[15, 16, 17], title="segment_bend")     # step6

@@ -19,11 +19,11 @@ from helper import first_peak
 import matplotlib
 from scipy.signal import find_peaks
 
-path = "/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR4/2023_07_19_21_16_08_push"
+path = "/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR5/2023_07_19_22_07_42_bend"
 
-# range_ = np.array([24, 35])
-# np.save(os.path.join(path, "range.npy"), range_)
-
+range_ = np.array([23, 30])
+np.save(os.path.join(path, "range.npy"), range_)
+exit(0)
 doppler = []
 doppler_bin_num = 32
 DISCARD_BINS = [15, 16, 17]
@@ -48,12 +48,22 @@ data_real = data_real[0:number_of_frames]
 data_complex = data_real + 1j * data_imag  # compute complex number
 data_complex = data_complex[start_ind:stop_ind, :]
 
-# locate moving object
+# compute range profile
 range_profile = np.abs(data_complex)
+
+# range_ = np.load(os.path.join(path, "range.npy"))
+# left = range_[0]
+# right = range_[1]
 
 mean_dis = np.mean(range_profile, axis=0)
 range_profile = range_profile - mean_dis
-hp = sns.heatmap(range_profile[:3000, :70])
+hp = sns.heatmap(range_profile[2000:3000, :70])
+# plt.axvline(x=left, color='r')
+# plt.axvline(x=right, color='r')
+plt.ylabel("time (1/{} second)".format(fps_uwb))
+plt.xlabel("range bin")
+plt.title("range profile")
+plt.savefig(os.path.join(path, "range_profile.png"))
 plt.show()
 exit(0)
 
