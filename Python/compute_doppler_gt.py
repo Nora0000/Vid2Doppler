@@ -1,3 +1,9 @@
+"""
+an old version to compute doppler from UWB.
+1. choose central bins by finding the brightest spot in doppler heatmap and choose the surrounding 5 columns
+2. align with video data via timestamps of each frame, instead of fps and start time
+
+"""
 import numpy as np
 import math
 from matplotlib import pyplot as plt

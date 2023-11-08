@@ -18,7 +18,7 @@ from matplotlib import pyplot as plt
 os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 
 data_path = "../../../models/triplet/"
-model_path = "../../../models/triplet_v46/"
+model_path = "../../../models/triplet_v56/"
 if not os.path.exists(model_path):
     print("{} does not exist.".format(model_path))
     os.mkdir(model_path)
@@ -37,7 +37,7 @@ X_test_r = np.load(os.path.join(model_path, "X_test_real.npy"))
 y_train_s = np.load(os.path.join(model_path, "Y_train_syn.npy"))
 y_test_r = np.load(os.path.join(model_path, "Y_test_real.npy"))
 
-path_v3 = "/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR5"
+path_v3 = "/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR4"
 X_real = np.load(os.path.join(path_v3, "X_4.npy"))
 y_real = np.load(os.path.join(path_v3, "Y_4.npy")) - 1
 X_syn = np.load(os.path.join(path_v3, "X_4_syn.npy"))

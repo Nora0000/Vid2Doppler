@@ -21,22 +21,21 @@ from scipy.ndimage import gaussian_filter1d
 
 
 # os.environ['CUDA_VISIBLE_DEVICES'] = '0'
-range = np.array([5, 17])
-np.save("/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR6/2023_07_19_21_31_18_draw_circle/synth_range.npy", range)
-exit(0)
+loss = np.load("/home/mengjingliu/Vid2Doppler/models/triplet_v46_test/loss_64.npy")
+train_loss, val_loss = loss[0, 1:], loss[1, 1:]
 
-# cnn test
-model_path = "/home/mengjingliu/Vid2Doppler/models/encoder_s6"
-X_train = np.load(os.path.join(model_path, "X_train.npy"))
-y_train = np.load(os.path.join(model_path, "y_train.npy"))
-# path6 = "/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR6"
-# x6_syn = np.load(os.path.join(path6, "X_4_syn.npy"))
+loss = np.load("/home/mengjingliu/Vid2Doppler/models/triplet_v46_test/loss_32.npy")
+train_loss = np.concatenate((train_loss, loss[0, :]))
+val_loss = np.concatenate((val_loss, loss[1, :]))
 
-model = load_model(os.path.join(model_path, "autoencoder_weights.hdf5"), custom_objects={'root_mean_squared_error': root_mean_squared_error})
+loss = np.load("/home/mengjingliu/Vid2Doppler/models/triplet_v46_test/loss_16.npy")
+train_loss = np.concatenate((train_loss, loss[0, :]))
+val_loss = np.concatenate((val_loss, loss[1, :]))
 
-X_test = np.load(os.path.join(model_path, "X_test.npy"))
-y_test = np.load(os.path.join(model_path, "y_test.npy"))
+loss = np.load("/home/mengjingliu/Vid2Doppler/models/triplet_v46_test/loss_8.npy")
+train_loss = np.concatenate((train_loss, loss[0, :]))
+val_loss = np.concatenate((val_loss, loss[1, :]))
 
-score = model.evaluate(X_test, y_test, verbose=0)
-print("Test loss:", score[0])
-print("Test accuracy:", score[1])
+plt.plot(np.arange(0, len(train_loss)), train_loss)
+plt.plot(np.arange(0, len(val_loss)), val_loss)
+plt.show()

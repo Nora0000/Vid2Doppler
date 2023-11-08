@@ -19,9 +19,9 @@ from helper import first_peak
 import matplotlib
 from scipy.signal import find_peaks
 
-path = "/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR5/2023_07_19_22_07_42_bend"
+path = "/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR2/2023_07_19_22_07_41_bend"
 
-range_ = np.array([23, 30])
+range_ = np.array([24, 31])
 np.save(os.path.join(path, "range.npy"), range_)
 exit(0)
 doppler = []
@@ -57,7 +57,7 @@ range_profile = np.abs(data_complex)
 
 mean_dis = np.mean(range_profile, axis=0)
 range_profile = range_profile - mean_dis
-hp = sns.heatmap(range_profile[2000:3000, :70])
+hp = sns.heatmap(range_profile[:, :70])
 # plt.axvline(x=left, color='r')
 # plt.axvline(x=right, color='r')
 plt.ylabel("time (1/{} second)".format(fps_uwb))
@@ -65,7 +65,6 @@ plt.xlabel("range bin")
 plt.title("range profile")
 plt.savefig(os.path.join(path, "range_profile.png"))
 plt.show()
-exit(0)
 
 std_dis = np.std(range_profile, axis=0)		# ignore first and last 10 seconds
 
@@ -99,6 +98,8 @@ plt.xlabel("range bin")
 plt.title("range profile")
 hp.figure.savefig(os.path.join(path, "range_profile_sample.png"))
 plt.show()
+
+exit(0)
 
 doppler_from_UWB = []
 doppler_1d = []
