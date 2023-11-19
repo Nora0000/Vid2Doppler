@@ -18,9 +18,9 @@ import random
 from sklearn.neural_network import MLPClassifier
 
 
-data_size = 0.1
+data_size = 0.2
 
-path1 = "/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR4"
+path1 = "/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR5"
 x1 = np.load(os.path.join(path1, "X_4.npy"))
 y1 = np.load(os.path.join(path1, "Y_4.npy"))
 x1_train, x1_test, y1_train, y1_test = train_test_split(x1, y1, train_size=0.8, random_state=42)
@@ -46,7 +46,7 @@ x2_train = np.vstack((x2_train, x2_syn))
 y2_train = np.concatenate((y2_train, y2_syn))
 
 
-path3 = "/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR5"
+path3 = "/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR4"
 x3 = np.load(os.path.join(path3, "X_4.npy"))
 y3 = np.load(os.path.join(path3, "Y_4.npy"))
 _, x3_test, _, y3_test = train_test_split(x3, y3, test_size=0.2, random_state=42)

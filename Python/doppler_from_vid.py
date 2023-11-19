@@ -61,7 +61,7 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 
 	parser.add_argument('--input_video', type=str, help='Input video file',
-	                    default="/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR2/2023_07_19_22_07_41_bend/rgb.avi")
+	                    default="/home/mengjingliu/Vid2Doppler/data/2023_11_17/HAR3/2023_11_17_12_34_31_bend/rgb.avi")
 
 	parser.add_argument('--visualize_mesh', help='Render visibility mesh and velocity map', action='store_true')
 

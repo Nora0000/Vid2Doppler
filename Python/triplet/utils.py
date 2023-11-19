@@ -65,11 +65,41 @@ class LossHistory(Callback):
         plt.clf()
 
 
+class AccuracyHistory(Callback):
+    def __init__(self, log_file, acc_file):
+        super().__init__()
+        self.valAcc = None
+        self.trainAcc = None
+        self.logFile = log_file
+        self.accFile = acc_file
+    
+    def on_train_begin(self, logs={}):
+        self.trainAcc = []
+        self.valAcc = []
+    
+    def on_epoch_end(self, batch, logs={}):
+        self.trainAcc.append(logs.get('accuracy'))
+        self.valAcc.append(logs.get('val_accuracy'))
+        
+        np.save(self.accFile, np.array([self.trainAcc, self.valAcc]))
+        
+        # plot loss curve
+        plt.plot(self.trainAcc)
+        plt.plot(self.valAcc)
+        plt.legend(['Training', 'Validation'])
+        plt.title("accuracy during training")
+        plt.xlabel("epoch")
+        plt.ylabel("accuracy")
+        plt.grid()
+        plt.savefig(self.logFile)
+        plt.clf()
+
 class CustomizedEarlyStopping(EarlyStopping):
     
     def on_epoch_end(self, epoch, logs=None):
         alpha = 0.2
-        if logs.get('val_loss') <= 0.1:
+        # if logs.get('val_loss') <= 0.1:
+        if True:
             current = self.get_monitor_value(logs)
             if current is None:
                 return

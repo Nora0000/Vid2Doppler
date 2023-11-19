@@ -12,7 +12,7 @@ import torch
 import random
 from sklearn.neural_network import MLPClassifier
 
-data_size = 0.1
+data_size = 0.2
 
 
 path1 = "/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR5"

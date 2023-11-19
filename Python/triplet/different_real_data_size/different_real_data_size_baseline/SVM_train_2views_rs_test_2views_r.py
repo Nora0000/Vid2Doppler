@@ -14,7 +14,7 @@ from joblib import dump, load
 from sklearn.metrics import accuracy_score, recall_score, f1_score, confusion_matrix
 from sklearn.neural_network import MLPClassifier
 
-real_data_size = 0.1
+real_data_size = 0.2
 
 path0 = "/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR4"
 x0 = np.load(os.path.join(path0, "X_4.npy"))

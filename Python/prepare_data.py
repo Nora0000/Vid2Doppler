@@ -62,7 +62,7 @@ def segment_align(path, path_of_segmentation, filename_segmentation="segmentatio
 		# start_ind, stop_ind = find_segment_indices(t1+1, t2+1.5, times_new)
 		# times.txt不准确。用开始时间和时间间隔、帧率计算更准确
 		t1, t2 = start + uwb1/fps, start + uwb2/fps
-		start_ind, stop_ind = align_index(t1-0.5, start_new, fps), align_index(t2-0.5, start_new, fps)
+		start_ind, stop_ind = align_index(t1-0.9, start_new, fps), align_index(t2-0.6, start_new, fps)
 		start_ind, stop_ind = find_segment_indices(start_ind, stop_ind, uwb_indices_new)
 		segs_new.append([start_ind, stop_ind])
 	
@@ -173,46 +173,46 @@ def augment_data(X, Y):
 if __name__ == "__main__":
 	"""
 	label:
-	circle: 1, push: 2, step:4, sit: 3, stand: 5, bend: 6
+	circle: 1, push: 2, step: 4, sit: 3, stand: 5, bend: 6
 	
 	"""
 	# load doppler (real or synthetic) and segmentation, aggregate dataset of different activities and generate labels.
-	
-	path = "/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR5"
-	# filename = "doppler_gt.npy"
-	filename = "synth_doppler.npy"
+	act = ["push", "step", "sit", "circle", "bend"]
+	path = "/home/mengjingliu/Vid2Doppler/data/2023_11_17/HAR3"
+	filename = "doppler_gt.npy"
+	# filename = "synth_doppler.npy"
 	act = os.listdir(path)
 	X = []
 	Y = []
 	for ac in act:
-		path_data = os.path.join(path, ac) + "/output/rgb/"
-		# path_data = os.path.join(path, ac)
+		# path_data = os.path.join(path, ac) + "/output/rgb/"
+		path_data = os.path.join(path, ac)
 		a = ac.split('_')[-1]
-		if a == "step":
-			# segment_align(path_data, "/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR6/2023_07_19_21_26_50_step", fps=180)
-			data, _ = load_data(path_data, filename, os.path.join(path, ac))
-			label = np.array([4] * len(data))
-			np.save(os.path.join(path, "X_step_syn.npy"), data)
-			np.save(os.path.join(path, "Y_step_syn.npy"), label)
-			exit(0)
-		# if a == "sit":
-		# 	# segment_align(path_data,
-		# 	# 			  "/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR6/2023_07_19_21_59_01_sit",
-		# 	# 			  "segmentation_sit.npy", fps=180)
-		# 	data, _ = load_data(path_data, filename, os.path.join(path, ac), filename_seg="segmentation_sit.npy")
-		# 	# data = augment_data(path_data,
-		# 	#                 filename, os.path.join(path, ac), filename_seg="segmentation_sit.npy")
-		# 	label = np.array([3] * len(data))
-		# 	np.save(os.path.join(path, "X_sit_syn.npy"), data)
-		# 	np.save(os.path.join(path, "Y_sit_syn.npy"), label)
-		#
-		# 	# segment_align(path_data,
-		# 	# 			  "/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR6/2023_07_19_21_59_01_sit",
-		# 	# 			  "segmentation_stand.npy", fps=180)
-		# 	data, _ = load_data(path_data, filename, os.path.join(path, ac), filename_seg="segmentation_stand.npy")
-		# 	label = np.array([5] * len(data))
-		# 	np.save(os.path.join(path, "X_stand_syn.npy"), data)
-		# 	np.save(os.path.join(path, "Y_stand_syn.npy"), label)
+		# if a == "bend":
+		# 	# segment_align(path_data, "/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR6/2023_07_19_22_07_44_bend", fps=180)
+		# 	data, _ = load_data(path_data, filename, os.path.join(path, ac))
+		# 	label = np.array([2] * len(data))
+		# 	np.save(os.path.join(path, "X_bend.npy"), data)
+		# 	np.save(os.path.join(path, "Y_bend.npy"), label)
+		# 	exit(0)
+		if a == "sit":
+			# segment_align(path_data,
+			# 			  "/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR6/2023_07_19_21_59_01_sit",
+			# 			  "segmentation_sit.npy", fps=180)
+			data, _ = load_data(path_data, filename, os.path.join(path, ac), filename_seg="segmentation_sit.npy")
+			# data = augment_data(path_data,
+			#                 filename, os.path.join(path, ac), filename_seg="segmentation_sit.npy")
+			label = np.array([3] * len(data))
+			np.save(os.path.join(path, "X_sit.npy"), data)
+			np.save(os.path.join(path, "Y_sit.npy"), label)
+			#
+			# segment_align(path_data,
+			# 			  "/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR6/2023_07_19_21_59_01_sit",
+			# 			  "segmentation_stand.npy", fps=180)
+			data, _ = load_data(path_data, filename, os.path.join(path, ac), filename_seg="segmentation_stand.npy")
+			label = np.array([5] * len(data))
+			np.save(os.path.join(path, "X_stand.npy"), data)
+			np.save(os.path.join(path, "Y_stand.npy"), label)
 		else:
 			continue
 	

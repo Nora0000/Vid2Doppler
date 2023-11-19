@@ -22,12 +22,14 @@ import seaborn as sns
 from matplotlib import pyplot as plt
 from sklearn.neural_network import MLPClassifier
 from config import *
+from utils import end2end_loss
+import tensorflow as tf
 
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 
 data_path = "../../../models/triplet/"
-model_path = "/home/mengjingliu/Vid2Doppler/models/triplet_cross_view_real0.64/with_synthetic_of_unseen_view/triplet_v46_5_test/"
+model_path = "/home/mengjingliu/Vid2Doppler/models/triplet_cross_view_real0.16/with_synthetic_of_unseen_view/end2end_v46_5/"
 if not os.path.exists(model_path):
     print("{} does not exist.".format(model_path))
     os.mkdir(model_path)
@@ -35,39 +37,40 @@ if not os.path.exists(model_path):
 
 # emb_size = 1500
 
-net = load_model(model_path + "model_weights_32.hdf5", custom_objects={'triplet_loss': triplet_loss})
-embed_model = Model(
-  inputs=net.layers[3].input,
-  outputs=net.layers[3].output
+net = load_model(model_path + "model_weights_64.hdf5", custom_objects={'end2end_loss': end2end_loss})
+input_shape = (28, 52, 1)
+input = tf.keras.layers.Input(shape=input_shape)
+x = net.layers[3](input)
+output = net.layers[4](x)
+clf = Model(
+  inputs=input,
+  outputs=output
 )
+
 
 X_train_s = np.load(os.path.join(model_path, "X_train_syn.npy"))
 X_test_r = np.load(os.path.join(model_path, "X_test_real.npy"))
 y_train_s = np.load(os.path.join(model_path, "Y_train_syn.npy"))
 y_test_r = np.load(os.path.join(model_path, "Y_test_real.npy"))
 
-emb_size = 128
 
 
-X_train = embed_model.predict(X_train_s)
+X_train = X_train_s
 y_train = y_train_s
 
-# clf = xgb.XGBClassifier(objective="multi:softprob", random_state=42)
-# clf = svm.SVC(C=0.1, kernel="rbf")
-clf = MLPClassifier(hidden_layer_sizes=(200, ), max_iter=100000, random_state=42)
-clf.fit(X_train, y_train)
-# dump(clf, os.path.join(model_path, 'svm.joblib'))
-
 pre_train = clf.predict(X_train)
+pre_train = np.argmax(pre_train, axis=1)
 print(f"training accuracy: {accuracy_score(y_train, pre_train)}")
 
-X_test = embed_model.predict(X_test_r)
+X_test = X_test_r
 pre_v46 = clf.predict(X_test)
+pre_v46 = np.argmax(pre_v46, axis=1)
 print(f"two seen views' accuracy: {accuracy_score(y_test_r, pre_v46)}")
 
 Y_test_real_leaveout = np.load(os.path.join(model_path, "Y_test_real_leaveout.npy"))
 X_test_real_leaveout = np.load(os.path.join(model_path, "X_test_real_leaveout.npy"))
-pre_leaveout = clf.predict(embed_model.predict(X_test_real_leaveout))
+pre_leaveout = clf.predict(X_test_real_leaveout)
+pre_leaveout = np.argmax(pre_leaveout, axis=1)
 print(f"unseen view's accuracy: {accuracy_score(Y_test_real_leaveout, pre_leaveout)}")
 
 
@@ -75,11 +78,3 @@ pre = np.concatenate((pre_v46, pre_leaveout))
 y_test = np.concatenate((y_test_r, Y_test_real_leaveout))
 
 print(f"testing accuracy: {accuracy_score(y_test, pre)}")
-
-# matrix = confusion_matrix(y_test, pre)
-# sns.heatmap(matrix)
-# plt.ylabel("prediction")
-# plt.xlabel("label")
-# plt.show()
-# print(matrix.diagonal()/matrix.sum(axis=1))
-

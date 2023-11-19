@@ -8,7 +8,7 @@ from math import log2
 import seaborn as sns
 
 
-def segment(path, filename, title="segment", threshold=2, width=10, doppler_bin=32, DISCARD_BINS = [15, 16, 17], if_save=False):
+def segment(path, filename, title="segment", threshold=2, width=10, doppler_bin=32, DISCARD_BINS = [15, 16, 17], if_save=True):
 	"""
 compute segmentation of doppler_time data. deternimne if a frame is "active" or "static".
 With 10 continuous active frames, an activity starts.
@@ -25,7 +25,7 @@ With 10 continuous static frames, an activity ends.
 
 	"""
 	d = np.load(os.path.join(path, filename))[120:-120, :]
-	# d = np.load(os.path.join(path, filename))[120:1000, :]
+	# d = np.load(os.path.join(path, filename))[120:600, :]
 	d[:, DISCARD_BINS] = np.zeros((len(d), len(DISCARD_BINS)))
 	# d = apply_lowpass_filter(d, 0.3)
 	
@@ -93,9 +93,10 @@ With 10 continuous static frames, an activity ends.
 			segs.append(seg)
 			seg = [active[i]]
 	segs.append(seg)
+
 	
 	if if_save:
-		np.save(os.path.join(path, "segmentation_sample.npy"), np.array([[seg[0]+120, seg[-1]+120] for seg in segs]))
+		np.save(os.path.join(path, "segmentation.npy"), np.array([[seg[0]+120-(width-1), seg[-1]+120-(width-1)] for seg in segs]))
 	
 	ll = np.array([len(seg) for seg in segs])
 	ll = np.sort(ll)
@@ -110,9 +111,9 @@ With 10 continuous static frames, an activity ends.
 	
 
 if __name__ == "__main__":
-	path = "/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR6/2023_07_19_22_07_44_bend"
+	path = "/home/mengjingliu/Vid2Doppler/data/2023_11_17/HAR3/2023_11_17_12_24_04_step"
 	filename = "doppler_gt.npy"
 	# segs, sigmas = segment(path, filename, width=10, threshold=2.6, DISCARD_BINS=[15, 16, 17])     # sit4
 	# segs, sigmas = segment(path, filename, width=10, threshold=2, DISCARD_BINS=[15, 16, 17])     # push4, circle6
 	# segs, sigmas = segment(path, filename, width=3, threshold=2, DISCARD_BINS=[15, 16, 17])     # step4
-	segs, sigmas = segment(path, filename, width=3, threshold=2, DISCARD_BINS=[15, 16, 17], title="segment_bend")     # step6
+	segs, sigmas = segment(path, filename, width=3, threshold=2.2, DISCARD_BINS=[15, 16, 17], title="segment_bend")     # step6

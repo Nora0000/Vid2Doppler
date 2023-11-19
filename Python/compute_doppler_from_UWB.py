@@ -19,18 +19,18 @@ from helper import first_peak
 import matplotlib
 from scipy.signal import find_peaks
 
-path = "/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR2/2023_07_19_22_07_41_bend"
+path = "/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR2/2023_07_19_21_26_48_step"
 
-range_ = np.array([24, 31])
-np.save(os.path.join(path, "range.npy"), range_)
-exit(0)
+# range_ = np.array([23, 34])
+# np.save(os.path.join(path, "range.npy"), range_)
+# exit(0)
 doppler = []
 doppler_bin_num = 32
 DISCARD_BINS = [15, 16, 17]
 # DISCARD_BINS = [16]
 fps_uwb = 180
 start_ind = 6000
-stop_ind = -1
+stop_ind = 10000
 
 # load raw data
 imag_file = os.path.join(path, 'frame_buff_imag.txt')

@@ -13,10 +13,10 @@ from scipy.ndimage import gaussian_filter1d
 
 act = ["circle", "sit", "stand", "step"]
 a = "push"
-real_data_path = f"/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR5/X_{a}.npy"
-real_label_path = f"/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR5/Y_{a}.npy"
-syn_data_path = f"/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR5/X_{a}_syn.npy"
-syn_label_path = f"/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR5/Y_{a}_syn.npy"
+real_data_path = f"/home/mengjingliu/Vid2Doppler/data/2023_11_17/HAR3/X_{a}.npy"
+real_label_path = f"/home/mengjingliu/Vid2Doppler/data/2023_11_17/HAR3/Y_{a}.npy"
+syn_data_path = f"/home/mengjingliu/Vid2Doppler/data/2023_11_17/HAR3/X_{a}_syn.npy"
+syn_label_path = f"/home/mengjingliu/Vid2Doppler/data/2023_11_17/HAR3/Y_{a}_syn.npy"
 X_real = np.load(real_data_path)
 y_real = np.load(real_label_path)
 X_syn = np.load(syn_data_path)
@@ -28,10 +28,10 @@ X_syn = np.delete(X_syn, [14, 15, 16, 17], axis=1)
 X_syn = UpsamplingBilinear2d(size=(28, 52))(torch.tensor(X_syn[np.newaxis, :, :, :])).numpy()[0, :, :, :]
 
 for a in act:
-    real_data_path = f"/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR5/X_{a}.npy"
-    real_label_path = f"/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR5/Y_{a}.npy"
-    syn_data_path = f"/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR5/X_{a}_syn.npy"
-    syn_label_path = f"/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR5/Y_{a}_syn.npy"
+    real_data_path = f"/home/mengjingliu/Vid2Doppler/data/2023_11_17/HAR3/X_{a}.npy"
+    real_label_path = f"/home/mengjingliu/Vid2Doppler/data/2023_11_17/HAR3/Y_{a}.npy"
+    syn_data_path = f"/home/mengjingliu/Vid2Doppler/data/2023_11_17/HAR3/X_{a}_syn.npy"
+    syn_label_path = f"/home/mengjingliu/Vid2Doppler/data/2023_11_17/HAR3/Y_{a}_syn.npy"
     
     X_real_ = np.load(real_data_path)
     y_real_ = np.load(real_label_path)
@@ -48,10 +48,10 @@ for a in act:
     y_real = np.concatenate((y_real, y_real_))
     y_syn = np.concatenate((y_syn, y_syn_))
 
-np.save(os.path.join("/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR5", "X_4.npy"), X_real)
-np.save(os.path.join("/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR5", "Y_4.npy"), y_real)
-np.save(os.path.join("/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR5", "X_4_syn.npy"), X_syn)
-np.save(os.path.join("/home/mengjingliu/Vid2Doppler/data/2023_07_19/HAR5", "Y_4_syn.npy"), y_syn)
+np.save(os.path.join("/home/mengjingliu/Vid2Doppler/data/2023_11_17/HAR3", "X_4.npy"), X_real)
+np.save(os.path.join("/home/mengjingliu/Vid2Doppler/data/2023_11_17/HAR3", "Y_4.npy"), y_real)
+np.save(os.path.join("/home/mengjingliu/Vid2Doppler/data/2023_11_17/HAR3", "X_4_syn.npy"), X_syn)
+np.save(os.path.join("/home/mengjingliu/Vid2Doppler/data/2023_11_17/HAR3", "Y_4_syn.npy"), y_syn)
 
 exit(0)
 
